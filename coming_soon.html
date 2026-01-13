@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module Offline</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    
+    <style>
+        /* === 复用主页核心变量 === */
+        :root {
+            --bg: #030712;
+            --card-bg: rgba(30, 41, 59, 0.4);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #6366f1;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* 复用噪点纹理背景 */
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 80%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 60px 40px;
+            border-radius: 24px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            max-width: 450px;
+            width: 90%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .icon-wrapper {
+            width: 80px; height: 80px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+        }
+        
+        /* 呼吸灯效果 */
+        .icon-wrapper::after {
+            content: ''; position: absolute; top: -5px; left: -5px; right: -5px; bottom: -5px;
+            border-radius: 24px;
+            border: 2px solid var(--accent);
+            opacity: 0.3;
+            animation: pulse 2s infinite;
+        }
+
+        .icon-wrapper svg { width: 40px; height: 40px; color: var(--accent); }
+
+        h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 10px; }
+        
+        .status-badge {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: #fbbf24; /* Amber color */
+            background: rgba(251, 191, 36, 0.1);
+            padding: 4px 12px;
+            border-radius: 99px;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            margin-bottom: 20px;
+        }
+
+        p { color: var(--text-secondary); line-height: 1.6; margin-bottom: 30px; }
+
+        .back-btn {
+            display: inline-block;
+            text-decoration: none;
+            background: rgba(255,255,255,0.05);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: 1px solid var(--card-border);
+        }
+        .back-btn:hover { background: var(--accent); border-color: var(--accent); transform: translateY(-2px); }
+
+        /* 动画 */
+        @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.5; } 50% { transform: scale(1.05); opacity: 0.1; } 100% { transform: scale(0.95); opacity: 0.5; } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="icon-wrapper">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+        </div>
+        
+        <div><span class="status-badge">PORT 0000 : OFFLINE</span></div>
+        
+        <h1>System Under Construction</h1>
+        <p>该模块正在开发或维护中。<br>请稍后访问或联系管理员。</p>
+        
+        <a href="index.html" class="back-btn">Return to Hub</a>
+    </div>
+
+</body>
+</html>

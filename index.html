@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>218 科研工具箱</title>
+    
+    <link rel="icon" type="image/png" href="./icon.png">
+    <link rel="apple-touch-icon" href="./icon.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    
+    <style>
+        /* === 全局变量 === */
+        :root {
+            --bg: #030712;
+            --card-bg: rgba(30, 41, 59, 0.6);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #6366f1; /* Indigo */
+            --accent-hover: #4f46e5;
+            --danger: #ef4444;
+            --success: #10b981; /* 新增：成功色用于呼吸灯 */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* 噪点背景 */
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 80%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+            overflow-x: hidden;
+        }
+
+        /* === 登录遮罩层 === */
+        #loginOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(3, 7, 18, 0.98);
+            backdrop-filter: blur(12px);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .login-box {
+            width: 90%;
+            max-width: 380px;
+            padding: 40px;
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .login-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; color: white; }
+        .login-sub { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 30px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
+
+        .pass-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: white;
+            font-size: 1.2rem;
+            outline: none;
+            transition: all 0.2s;
+            text-align: center;
+            letter-spacing: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 20px;
+        }
+        .pass-input:focus { border-color: var(--accent); background: rgba(0,0,0,0.4); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+        
+        .login-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px;
+            width: 100%;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        .login-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 15px; min-height: 1.2em; opacity: 0; transition: opacity 0.2s; font-weight: 500; }
+
+        /* === 主界面布局 === */
+        #mainApp {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.8s ease-out;
+            padding-bottom: 60px;
+        }
+
+        .header-container { 
+            width: 100%; 
+            max-width: 1100px; 
+            padding: 60px 20px 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-end; 
+            flex-wrap: wrap; 
+            gap: 20px; 
+        }
+
+        .header-left h1 { 
+            font-size: 2rem; 
+            font-weight: 800; 
+            background: linear-gradient(to right, #fff, #cbd5e1); 
+            -webkit-background-clip: text; 
+            color: transparent; 
+            letter-spacing: -0.03em;
+            margin-bottom: 5px; /* 微调间距 */
+        }
+        .header-left .status { 
+            display: inline-flex; 
+            align-items: center; 
+            font-size: 0.75rem; 
+            color: #34d399; 
+            background: rgba(16, 185, 129, 0.1); 
+            padding: 4px 10px; 
+            border-radius: 99px; 
+            margin-bottom: 10px; 
+            border: 1px solid rgba(16, 185, 129, 0.2); 
+            font-weight: 600;
+        }
+        .status-dot { width: 6px; height: 6px; background: currentColor; border-radius: 50%; margin-right: 6px; box-shadow: 0 0 8px currentColor; animation: pulse 2s infinite; }
+
+        /* 【新增】统计数据的样式 */
+        .stats-bar {
+            display: flex; gap: 15px; font-size: 0.8rem; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-item { display: flex; align-items: center; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
+        .stat-icon { margin-right: 6px; width: 14px; height: 14px; }
+        .live-dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; margin-right: 6px; box-shadow: 0 0 8px var(--success); animation: pulse 2s infinite; }
+
+        .search-box { position: relative; width: 100%; max-width: 320px; }
+        .search-box input { 
+            width: 100%; 
+            background: rgba(255, 255, 255, 0.04); 
+            border: 1px solid var(--card-border); 
+            padding: 12px 16px 12px 44px; 
+            border-radius: 12px; 
+            color: white; 
+            font-size: 0.95rem; 
+            transition: all 0.2s; 
+        }
+        .search-box input:focus { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.25); outline: none; }
+        .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); width: 18px; height: 18px; pointer-events: none;}
+
+        /* === 分类栏 (胶囊样式) === */
+        .filter-container {
+            width: 100%;
+            max-width: 1100px;
+            padding: 0 20px 30px;
+        }
+
+        .category-tabs { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 10px; 
+            width: 100%; 
+        }
+
+        .tab-btn { 
+            background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid transparent;
+            color: var(--text-secondary); 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            font-weight: 500; 
+            padding: 8px 16px; 
+            border-radius: 99px; 
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .tab-btn.active { 
+            background: var(--accent); 
+            color: white; 
+            border-color: rgba(255,255,255,0.1);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        /* === 网格布局 === */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
+            gap: 20px; 
+            width: 100%; 
+            max-width: 1100px; 
+            padding: 0 20px; 
+        }
+        
+        .card { 
+            background: var(--card-bg); 
+            border: 1px solid var(--card-border); 
+            border-radius: 16px; 
+            padding: 24px; 
+            position: relative; 
+            text-decoration: none; 
+            overflow: hidden; 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex; 
+            flex-direction: column; 
+            cursor: pointer; 
+        }
+        .card:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+            border-color: rgba(255,255,255,0.2);
+        }
+        
+        /* 聚光灯 */
+        .card::before { 
+            content: ''; 
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.06), transparent 40%); 
+            opacity: 0; 
+            transition: opacity 0.5s; 
+            pointer-events: none; 
+            z-index: 1; 
+        }
+        .card:hover::before { opacity: 1; }
+        
+        .card-content { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .icon-box { 
+            width: 44px; height: 44px; 
+            background: rgba(255, 255, 255, 0.03); 
+            border-radius: 10px; 
+            display: flex; align-items: center; justify-content: center; 
+            color: var(--text-primary); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            transition: transform 0.3s;
+        }
+        .card:hover .icon-box { transform: scale(1.1) rotate(3deg); background: rgba(255, 255, 255, 0.08); }
+        .icon-box svg { width: 22px; height: 22px; stroke-width: 1.8; }
+        
+        .card-port { 
+            font-family: 'JetBrains Mono', monospace; 
+            font-size: 0.7rem; 
+            color: var(--text-secondary); 
+            background: rgba(0,0,0,0.3); 
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .card-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.01em; }
+        .card-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; flex-grow: 1; margin-bottom: 10px; }
+        
+        .card-footer { 
+            margin-top: auto; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; /* 调整为两端对齐 */
+            font-size: 0.8rem; 
+            color: var(--accent); 
+            font-weight: 500;
+        }
+
+        /* 【新增】卡片底部点击统计样式 */
+        .click-count {
+            display: flex; align-items: center; font-size: 0.75rem; color: var(--text-secondary); opacity: 0.6;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .click-count svg { width: 12px; height: 12px; margin-right: 4px; }
+
+        .launch-text { opacity: 0; transform: translateX(-10px); transition: all 0.3s; }
+        .card:hover .launch-text { opacity: 1; transform: translateX(0); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        @media (max-width: 640px) { 
+            .header-container { flex-direction: column; align-items: flex-start; gap: 20px; padding-top: 40px; } 
+            .search-box { width: 100%; max-width: 100%; }
+            .filter-container { padding-bottom: 20px; }
+            .category-tabs { gap: 8px; }
+            .tab-btn { padding: 6px 14px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loginOverlay">
+        <div class="login-box">
+            <div class="login-title">🔒 218 实验室门禁</div>
+            <p class="login-sub">Authorized Personnel Only</p>
+            
+            <input type="password" id="passwordInput" class="pass-input" placeholder="PASSCODE" autocomplete="off">
+            <button class="login-btn" onclick="checkPassword()">UNLOCK TERMINAL</button>
+            <div id="errorMsg" class="error-msg"></div>
+        </div>
+    </div>
+
+    <div id="mainApp">
+        <div class="header-container">
+            <div class="header-left">
+                <h1>218科研工具箱</h1>
+                
+                <div class="stats-bar">
+                    <div class="stat-item" title="Current Users">
+                        <span class="live-dot"></span> <span id="activeUserCount">-</span> Online
+                    </div>
+                    <div class="stat-item" title="Total Visits">
+                        <svg class="stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <span id="totalVisitCount">...</span> Visits
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-box">
+                <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" id="search" placeholder="Search tools, ports...">
+            </div>
+        </div>
+
+        <div class="filter-container">
+             <div class="category-tabs" id="tabContainer"></div>
+        </div>
+
+        <main class="grid" id="cardContainer"></main>
+    </div>
+
+    <script>
+        // ================= 配置区域 =================
+        
+        // 【密码设置】
+        // Base64: "admin" -> "YWRtaW4="
+        // Base64: "990824" -> "OTkwODI0"
+        const ACCESS_TOKEN = "OTkwODI0"; 
+
+        // 【服务端口配置】
+        const serverIP = window.location.hostname;
+        const toolsConfig = [
+            { 
+                id: "jupyter_lab",
+                name: "Jupyter Lab", 
+                desc: "类似autoDL的东西", 
+                port: "8888", 
+                icon: "cpu", 
+                category: "Research", 
+                path: "/lab" 
+            },
+            { 
+                id: "paper_ai",
+                name: "创新点辅助智能体", 
+                desc: "和你互动想出合理的三个创新点", 
+                port: "8218", 
+                icon: "robot", 
+                category: "AI Service" 
+            },
+            { 
+                id: "vscode",
+                name: "VS Code在线环境", 
+                desc: "在线编程服务器上的内容", 
+                port: "8080", 
+                icon: "code", 
+                category: "DevTools" 
+            },
+            { 
+                id: "re_ai",
+                name: "AI审稿智能体", 
+                desc: "帮你快速给出审稿意见，投稿前可以过一过", 
+                port: "8001", 
+                icon: "box", 
+                category: "System" 
+            },
+            { 
+                id: "zhanwei1",
+                name: "占位", 
+                desc: "comming soon", 
+                port: "0000", 
+                icon: "chart", 
+                category: "Research" 
+            },
+            { 
+                id: "zhanwei2",
+                name: "占位", 
+                desc: "CM", 
+                port: "0000", 
+                icon: "folder", 
+                category: "Tools" 
+            },
+            { 
+                id: "zhanwei3",
+                name: "占位", 
+                desc: "Upcoming Feature: Graph Database", 
+                port: "0000", 
+                icon: "chart", 
+                category: "Research" 
+            }
+        ];
+
+        // ================= 统计逻辑 (你之前确实这部分) =================
+        let toolClickCounts = {};
+
+        // 1. 获取统计数据
+        async function fetchStats() {
+            try {
+                // 请求 server.py 提供的 API
+                const res = await fetch('/api/stats');
+                if (res.ok) {
+                    const data = await res.json();
+                    
+                    // 更新顶部总数
+                    document.getElementById('totalVisitCount').innerText = data.total_visits;
+                    document.getElementById('activeUserCount').innerText = data.active_users;
+                    
+                    // 更新工具点击数
+                    toolClickCounts = data.tool_clicks;
+                    updateClickCountsInDom();
+                }
+            } catch (e) {
+                console.log("Stats backend not running");
+            }
+        }
+
+        // 2. 将点击数据填入卡片
+        function updateClickCountsInDom() {
+            toolsConfig.forEach(tool => {
+                const countEl = document.getElementById(`count-${tool.id}`);
+                if (countEl) {
+                    const count = toolClickCounts[tool.id] || 0;
+                    countEl.innerText = count;
+                }
+            });
+        }
+
+        // 3. 上报点击
+        async function reportClick(toolId) {
+            try {
+                await fetch(`/api/click?id=${toolId}`);
+                // 立即刷新数据，让用户看到数字+1
+                fetchStats(); 
+            } catch(e) { console.error(e); }
+        }
+
+        // ================= 核心逻辑 =================
+        
+        // 1. 登录验证
+        function checkPassword() {
+            const input = document.getElementById('passwordInput').value;
+            const errorMsg = document.getElementById('errorMsg');
+            const btn = document.querySelector('.login-btn');
+
+            btn.innerText = "VERIFYING...";
+            
+            setTimeout(() => {
+                let encodedInput = "";
+                try {
+                    encodedInput = btoa(input); 
+                } catch(e) {
+                    encodedInput = "invalid";
+                }
+
+                if (encodedInput === ACCESS_TOKEN) {
+                    btn.innerText = "ACCESS GRANTED";
+                    btn.style.background = "#10b981";
+                    
+                    setTimeout(() => {
+                        document.getElementById('loginOverlay').style.opacity = '0';
+                        setTimeout(() => {
+                            document.getElementById('loginOverlay').style.display = 'none';
+                            const app = document.getElementById('mainApp');
+                            app.style.display = 'flex';
+                            initApp();
+                        }, 500);
+                    }, 400);
+                } else {
+                    btn.innerText = "UNLOCK TERMINAL";
+                    btn.style.background = "var(--accent)"; 
+                    errorMsg.style.opacity = '1';
+                    errorMsg.innerText = "Access Denied: Invalid Code";
+                    
+                    document.querySelector('.login-box').animate([
+                        { transform: 'translateX(0)' }, { transform: 'translateX(-10px)' }, 
+                        { transform: 'translateX(10px)' }, { transform: 'translateX(0)' }
+                    ], { duration: 300 });
+                    
+                    document.getElementById('passwordInput').value = '';
+                    document.getElementById('passwordInput').focus();
+                }
+            }, 300);
+        }
+
+        // 2. 初始化应用
+        function initApp() {
+            renderTabs();
+            renderCards();
+            document.getElementById('search').addEventListener('input', e => renderCards('All', e.target.value));
+            
+            // 【启动】开始获取统计数据
+            fetchStats();
+            // 每10秒轮询一次在线人数
+            setInterval(fetchStats, 10000); 
+        }
+
+        // 3. 图标渲染
+        function getIconSvg(name) {
+            const icons = {
+                'cpu': '<path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />',
+                'code': '<path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />',
+                'robot': '<path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />',
+                'box': '<path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />',
+                'chart': '<path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />',
+                'folder': '<path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />',
+                'default': '<path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />'
+            };
+            return `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor">${icons[name] || icons['default']}</svg>`;
+        }
+
+        // 4. 链接生成
+        function getLink(tool) {
+            if (tool.port === "0000") return "./coming_soon.html";
+            if (tool.manualUrl) return tool.manualUrl;
+            return `http://${serverIP}:${tool.port}${tool.path || ''}`;
+        }
+
+        // 5. 渲染标签
+        const tabContainer = document.getElementById('tabContainer');
+        function renderTabs() {
+            const categories = ['All', ...new Set(toolsConfig.map(t => t.category))];
+            tabContainer.innerHTML = categories.map(cat => `
+                <button class="tab-btn ${cat === 'All' ? 'active' : ''}" onclick="setFilter('${cat}')">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        // 6. 筛选逻辑
+        window.setFilter = (cat) => {
+            renderCards(cat, document.getElementById('search').value);
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText === cat);
+            });
+        }
+
+        // 7. 渲染卡片
+        const container = document.getElementById('cardContainer');
+        function renderCards(filter = 'All', searchTerm = '') {
+            container.innerHTML = '';
+            
+            const filtered = toolsConfig.filter(tool => {
+                const matchesCat = filter === 'All' || tool.category === filter;
+                const matchesSearch = tool.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                      tool.desc.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                      tool.port.includes(searchTerm);
+                return matchesCat && matchesSearch;
+            });
+
+            filtered.forEach(tool => {
+                const card = document.createElement('a');
+                card.className = 'card';
+                card.href = getLink(tool);
+                card.target = "_blank";
+                
+                // 【新增】点击监听：调用 reportClick
+                card.onclick = () => {
+                    reportClick(tool.id);
+                };
+
+                card.onmousemove = e => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    card.style.setProperty('--mouse-x', `${x}px`);
+                    card.style.setProperty('--mouse-y', `${y}px`);
+                };
+
+                const displayPort = tool.port === "0000" ? "OFFLINE" : tool.port;
+
+                // 【新增】卡片底部HTML，包含了数字显示区
+                card.innerHTML = `
+                    <div class="card-content">
+                        <div class="card-header">
+                            <div class="icon-box">${getIconSvg(tool.icon)}</div>
+                            <span class="card-port" style="${tool.port === '0000' ? 'color:#fbbf24; border-color:rgba(251,191,36,0.2);' : ''}">${displayPort}</span>
+                        </div>
+                        <div class="card-title">${tool.name}</div>
+                        <div class="card-desc">${tool.desc}</div>
+                        
+                        <div class="card-footer">
+                            <div class="click-count" title="Used count">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                <span id="count-${tool.id}">0</span>
+                            </div>
+                            <span class="launch-text">${tool.port === '0000' ? 'Coming Soon' : 'Launch Service'} &rarr;</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            // 【新增】渲染完后，立刻填入数字
+            updateClickCountsInDom();
+        }
+
+        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkPassword();
+        });
+    </script>
+</body>
+</html>

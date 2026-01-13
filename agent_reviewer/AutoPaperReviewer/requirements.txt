@@ -1,0 +1,24 @@
+# --- 核心依赖 ---
+# PDF 处理 (对应代码: import fitz)
+pymupdf==1.23.26
+
+# LLM 接口 (对应代码: from openai import OpenAI)
+openai==1.12.0
+
+# 配置文件解析 (对应代码: import yaml)
+# 注意：代码里 import yaml，但安装包名叫 PyYAML
+PyYAML==6.0.1
+
+# 环境变量加载 (对应代码: from dotenv import load_dotenv)
+python-dotenv==1.0.1
+
+# --- GUI 依赖 ---
+# Web 界面 (对应代码: import streamlit)
+streamlit==1.31.1
+
+# --- 可选/推荐依赖 ---
+# Token 计算 (OpenAI 官方推荐)
+tiktoken==0.5.2
+
+# 文件监控 (Streamlit 推荐，提升Linux下性能)
+watchdog==4.0.0

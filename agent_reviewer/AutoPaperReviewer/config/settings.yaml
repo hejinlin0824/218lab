@@ -1,0 +1,41 @@
+# ==========================================
+# AutoPaperReviewer 全局配置文件
+# ==========================================
+
+llm:
+  # 默认使用的模型名称
+  # 注意：这需要与你的 API Key 权限匹配 (例如 gpt-4o, gpt-4-turbo, deepseek-chat)
+  default_model: "gpt-4o"
+
+  # 温度系数 (0.0 ~ 1.0)
+  # 较低的温度 (0.1-0.3) 适合客观、严谨的分析任务
+  # 较高的温度 (0.7+) 适合创意写作
+  temperature: 0.2
+
+  # 最大输出 Token 数
+  # 一份完整的审稿报告通常较长，建议预留 4000 左右
+  max_output_tokens: 4096
+
+  # 单次请求超时时间 (秒)
+  # 解析长文本需要时间，建议设长一点
+  timeout: 120
+
+  # API 调用失败时的最大重试次数
+  max_retries: 3
+
+paths:
+  # 待审阅 PDF 文件的存放目录
+  input_dir: "data/input"
+
+  # 生成的 Markdown 审稿报告存放目录
+  output_dir: "data/output"
+
+  # 系统日志存放目录
+  log_dir: "logs"
+
+processing:
+  # 是否在控制台打印详细的 Debug 信息 (True/False)
+  verbose: true
+
+  # 默认文件编码
+  encoding: "utf-8"
