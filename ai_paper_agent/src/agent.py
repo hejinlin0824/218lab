@@ -12,17 +12,34 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 
 from src.config import llm, RES_DIR
-from src.tools import ALL_TOOLS
+# [修改点 1] 引入 ToolFactory 而不是静态的 ALL_TOOLS
+from src.tools import ToolFactory
 from src.prompts import PromptManager
 
 class ResearchAgent:
     """
     科研Agent核心类。
+    支持多会话并发，每个实例绑定一个 session_id。
     """
     
-    def __init__(self):
+    def __init__(self, session_id: str):
+        """
+        初始化 Agent 实例。
+        :param session_id: 用户的唯一会话 ID (UUID string)
+        """
+        self.session_id = session_id
+        
+        # [修改点 2] 动态构建用户专属目录
+        self.session_dir = RES_DIR / self.session_id
+        if not self.session_dir.exists():
+            self.session_dir.mkdir(parents=True, exist_ok=True)
+            
         self.llm = llm
-        self.tools = ALL_TOOLS
+        
+        # [修改点 3] 使用工厂生成绑定了特定路径的工具集
+        # 这样 Agent 调用的 write_file_tool 就会自动写到 res/{session_id}/ 下
+        self.tools = ToolFactory(self.session_dir).get_tools()
+        
         self.chat_history = ChatMessageHistory()
         self.agent_executor = None
         
@@ -51,7 +68,9 @@ class ResearchAgent:
         )
 
     def update_phase(self, phase: Literal["read", "innov1", "innov2", "innov3", "final"], context_data: dict = None):
-        print(f"\n[System] Switching Agent Brain to Phase: {phase.upper()}...")
+        # 打印日志带上 User ID 前缀，方便后台区分
+        user_prefix = f"[User {self.session_id[:8]}]"
+        print(f"\n[System] {user_prefix} Switching Agent Brain to Phase: {phase.upper()}...")
         
         # --- 递归上下文注入 ---
         dependencies = {
@@ -62,9 +81,10 @@ class ResearchAgent:
         
         accumulated_context = ""
         if phase in dependencies:
-            print(f"[System] Loading previous context for coherence check...")
+            print(f"[System] {user_prefix} Loading previous context for coherence check...")
             for filename in dependencies[phase]:
-                file_path = RES_DIR / filename
+                # [修改点 4] 从用户的 session_dir 读取前序文件，防止串号
+                file_path = self.session_dir / filename
                 if file_path.exists():
                     try:
                         with open(file_path, 'r', encoding='utf-8') as f:
@@ -89,7 +109,7 @@ class ResearchAgent:
             raise ValueError(f"Unknown phase: {phase}")
 
         self._build_agent(prompt_content)
-        print(f"[System] Agent is ready with new instructions (Context Injected).")
+        print(f"[System] {user_prefix} Agent is ready with new instructions (Context Injected).")
 
     def chat_stream(self, user_input: str, callbacks: list = None):
         """
@@ -98,27 +118,29 @@ class ResearchAgent:
         if not self.agent_executor:
             raise RuntimeError("Agent not initialized. Call update_phase() first.")
 
-        print(f"\n[System] LLM Request Started. Waiting for first token...") # Debug log
+        print(f"\n[System] LLM Request Started for User {self.session_id[:8]}...") 
 
         try:
+            # session_id 参数对于 RunnableWithMessageHistory 很重要，但在我们这个架构里
+            # chat_history 已经绑定在 self 实例上了，这里传什么字符串其实不影响隔离，
+            # 但为了规范，还是传入 session_id
             stream_iterable = self.agent_executor.stream(
                 {"input": user_input},
                 config={
-                    "configurable": {"session_id": "research_session"},
+                    "configurable": {"session_id": self.session_id},
                     "callbacks": callbacks or [] 
                 }
             )
 
             for chunk in stream_iterable:
-                # 这是一个中间步骤的 Chunk (可能是 Action, 也可能是 Final Answer)
                 # 只有当包含 "output" 时，才是最终给用户的回复
                 if "output" in chunk:
-                    # 打印一个小点，表示正在接收数据，防止用户以为卡死
+                    # 打印一个小点，表示正在接收数据
                     sys.stdout.write(".") 
                     sys.stdout.flush()
                     yield chunk["output"]
             
-            print("\n[System] Stream finished.")
+            print(f"\n[System] Stream finished for User {self.session_id[:8]}.")
 
         except Exception as e:
             error_msg = f"System Error during execution: {str(e)}"
@@ -133,4 +155,4 @@ class ResearchAgent:
 
     def clear_short_term_memory(self):
         self.chat_history.clear()
-        print("[System] Short-term conversation memory cleared for new phase.")
+        print(f"[System] Short-term conversation memory cleared for User {self.session_id[:8]}.")
