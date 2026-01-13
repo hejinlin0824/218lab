@@ -1,9 +1,9 @@
 {
-    "total_visits": 30,
+    "total_visits": 32,
     "tool_clicks": {
         "re_ai": 1,
         "zhanwei1": 1,
         "paper_ai": 3,
-        "vscode": 1
+        "vscode": 2
     }
 }
