@@ -1,11 +1,11 @@
 {
-    "total_visits": 104,
+    "total_visits": 111,
     "tool_clicks": {
-        "re_ai": 2,
+        "re_ai": 4,
         "zhanwei1": 1,
-        "paper_ai": 8,
+        "paper_ai": 10,
         "vscode": 3,
-        "notebook": 5,
+        "notebook": 10,
         "zhanwei2": 2,
         "jupyter_lab": 1
     }

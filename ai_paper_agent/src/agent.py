@@ -14,10 +14,12 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 
 # 引入向量检索相关库 (用于科研笔记持久化)
 from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
+# === 修改点：新增 ChatOpenAI 导入，用于动态初始化 ===
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_text_splitters import CharacterTextSplitter
 
-from src.config import llm, RES_DIR, OPENAI_API_KEY, OPENAI_API_BASE
+# === 修改点：不再从 config 导入 llm 和 API KEY，只导入路径 ===
+from src.config import RES_DIR
 from src.tools import ToolFactory
 from src.prompts import PromptManager
 
@@ -28,10 +30,14 @@ class ResearchAgent:
     集成 FAISS 硬盘持久化记忆，支持基于方案A的笔记同步。
     """
     
-    def __init__(self, session_id: str):
+    # === 修改点：初始化接收用户动态配置 ===
+    def __init__(self, session_id: str, api_key: str, base_url: str, model: str):
         """
         初始化 Agent 实例。
-        :param session_id: 用户的用户名 (从导航页透传而来)
+        :param session_id: 用户的用户名
+        :param api_key: 用户提供的 API Key
+        :param base_url: 用户提供的 Base URL
+        :param model: 用户选择的模型
         """
         self.session_id = session_id
         
@@ -40,12 +46,20 @@ class ResearchAgent:
         if not self.session_dir.exists():
             self.session_dir.mkdir(parents=True, exist_ok=True)
             
-        self.llm = llm
+        # === 修改点：动态构建 LLM ===
+        self.llm = ChatOpenAI(
+            model=model,
+            temperature=0.0, # 科研任务保持严谨
+            api_key=api_key,
+            base_url=base_url,
+            streaming=True
+        )
         
         # 2. 初始化嵌入模型 (用于 FAISS)
+        # 注意：这里假设用户提供的 API Key 也支持 Embedding (通常 OpenAI/DeepSeek 格式兼容)
         self.embeddings = OpenAIEmbeddings(
-            openai_api_key=OPENAI_API_KEY,
-            openai_api_base=OPENAI_API_BASE
+            openai_api_key=api_key,
+            openai_api_base=base_url
         )
         
         # 3. 尝试从硬盘加载该用户的 FAISS 索引
@@ -86,11 +100,26 @@ class ResearchAgent:
         try:
             from langchain_community.document_loaders import TextLoader
             for md_path in md_files:
-                # 排除记忆文件本身，避免逻辑循环
+                # === 过滤逻辑：排除系统文件 ===
                 if md_path.name == "memory.md":
                     continue
-                loader = TextLoader(str(md_path), encoding='utf-8')
-                all_docs.extend(loader.load())
+                # 排除以 . 开头的隐藏文件夹 (如 .silverbullet)
+                if any(part.startswith('.') for part in md_path.parts):
+                    continue
+                # 排除 SilverBullet 插件库
+                if "_plug" in md_path.parts or "Library" in md_path.parts:
+                    continue
+                # === 过滤结束 ===
+
+                try:
+                    loader = TextLoader(str(md_path), encoding='utf-8')
+                    all_docs.extend(loader.load())
+                except Exception as load_err:
+                    print(f"[Warning] Failed to load {md_path}: {load_err}")
+                    continue
+
+            if not all_docs:
+                return "未找到有效的笔记文件 (已忽略系统文件)。"
 
             # 文本切片
             text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
@@ -100,7 +129,7 @@ class ResearchAgent:
             self.vector_store = FAISS.from_documents(texts, self.embeddings)
             self.vector_store.save_local(str(self.vector_store_path))
             
-            return f"同步成功！已扫描 {len(md_files)} 个文件，知识库已更新并保存至硬盘。"
+            return f"同步成功！已索引 {len(all_docs)} 个有效笔记文件，知识库已更新。"
         except Exception as e:
             return f"知识库同步失败: {str(e)}"
 
@@ -138,7 +167,7 @@ class ResearchAgent:
         user_prefix = f"[User {self.session_id}]"
         print(f"\n[System] {user_prefix} Switching Agent Brain to Phase: {phase.upper()}...")
         
-        # --- 递归上下文注入 (完全保留原有逻辑) ---
+        # --- 递归上下文注入 ---
         dependencies = {
             "innov2": ["innov1.md"],
             "innov3": ["innov1.md", "innov2.md"],
@@ -180,7 +209,6 @@ class ResearchAgent:
     def chat_stream(self, user_input: str, callbacks: list = None):
         """
         生成器函数：流式返回 Agent 的最终回复。
-        完全保留原有的 chunk 处理和打印逻辑。
         """
         if not self.agent_executor:
             raise RuntimeError("Agent not initialized. Call update_phase() first.")
@@ -200,7 +228,7 @@ class ResearchAgent:
             for chunk in stream_iterable:
                 # 只有当包含 "output" 时，才是最终给用户的回复
                 if "output" in chunk:
-                    # 打印一个小点，表示正在接收数据 (原有逻辑)
+                    # 打印一个小点，表示正在接收数据
                     sys.stdout.write(".") 
                     sys.stdout.flush()
                     yield chunk["output"]

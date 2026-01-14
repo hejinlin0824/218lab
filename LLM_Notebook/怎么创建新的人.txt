@@ -1,0 +1,13 @@
+sudo docker run -d \
+  --name notebook_hejinlin \
+  --restart unless-stopped \
+  -p 8002:3000 \
+  -v $(pwd)/ai_paper_agent/res/hejinlin:/space \
+  zefhemel/silverbullet
+
+sudo docker run -d \
+  --name notebook_zhaoyixin \
+  --restart unless-stopped \
+  -p 8003:3000 \
+  -v $(pwd)/ai_paper_agent/res/zhaoyixin:/space \
+  zefhemel/silverbullet

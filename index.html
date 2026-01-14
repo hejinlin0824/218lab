@@ -1,701 +1,741 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-     <title>218 Lab Control Center</title>
-     
-     <link rel="icon" type="image/png" href="./icon.png">
-     <link rel="apple-touch-icon" href="./icon.png">
-     
-     <link rel="preconnect" href="https://fonts.googleapis.com">
-     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-     
-     <style>
-         /* === 1. 全局变量 === */
-         :root {
-             --bg: #030712;
-             --card-bg: rgba(30, 41, 59, 0.6);
-             --card-border: rgba(255, 255, 255, 0.1);
-             --text-primary: #f8fafc;
-             --text-secondary: #94a3b8;
-             --accent: #6366f1; /* Indigo */
-             --accent-hover: #4f46e5;
-             --danger: #ef4444;
-             --success: #10b981;
-         }
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+      <title>218 Lab Control Center</title>
+      
+      <link rel="icon" type="image/png" href="./icon.png">
+      <link rel="apple-touch-icon" href="./icon.png">
+      
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+      
+      <style>
+          /* === 1. 全局变量 === */
+          :root {
+              --bg: #030712;
+              --card-bg: rgba(30, 41, 59, 0.6);
+              --card-border: rgba(255, 255, 255, 0.1);
+              --text-primary: #f8fafc;
+              --text-secondary: #94a3b8;
+              --accent: #6366f1; /* Indigo */
+              --accent-hover: #4f46e5;
+              --danger: #ef4444;
+              --success: #10b981;
+          }
 
-         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+          * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
 
-         body {
-             background-color: var(--bg);
-             color: var(--text-primary);
-             min-height: 100vh;
-             display: flex;
-             flex-direction: column;
-             align-items: center;
-             background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 80%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
-             overflow-x: hidden;
-         }
+          body {
+              background-color: var(--bg);
+              color: var(--text-primary);
+              min-height: 100vh;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 80%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+              overflow-x: hidden;
+          }
 
-         /* === 2. 弹窗通用样式 (登录 & 个人中心) === */
-         .overlay {
-             position: fixed;
-             top: 0; left: 0; width: 100%; height: 100%;
-             background: rgba(3, 7, 18, 0.98);
-             backdrop-filter: blur(12px);
-             z-index: 9999;
-             display: flex;
-             justify-content: center;
-             align-items: center;
-             flex-direction: column;
-             transition: opacity 0.5s ease;
-         }
+          /* === 2. 弹窗通用样式 (登录 & 个人中心) === */
+          .overlay {
+              position: fixed;
+              top: 0; left: 0; width: 100%; height: 100%;
+              background: rgba(3, 7, 18, 0.98);
+              backdrop-filter: blur(12px);
+              z-index: 9999;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              flex-direction: column;
+              transition: opacity 0.5s ease;
+          }
 
-         .login-box {
-             width: 90%;
-             max-width: 380px;
-             padding: 40px;
-             background: rgba(30, 41, 59, 0.4);
-             border: 1px solid var(--card-border);
-             border-radius: 20px;
-             text-align: center;
-             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-             animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-         }
+          .login-box {
+              width: 90%;
+              max-width: 380px;
+              padding: 40px;
+              background: rgba(30, 41, 59, 0.4);
+              border: 1px solid var(--card-border);
+              border-radius: 20px;
+              text-align: center;
+              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+              animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+          }
 
-         .login-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; color: white; }
-         .login-sub { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 30px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
+          .login-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; color: white; }
+          .login-sub { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 30px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
 
-         .pass-input {
-             width: 100%;
-             padding: 14px 16px;
-             background: rgba(0, 0, 0, 0.2);
-             border: 1px solid var(--card-border);
-             border-radius: 10px;
-             color: white;
-             font-size: 1.1rem;
-             outline: none;
-             transition: all 0.2s;
-             text-align: center;
-             letter-spacing: 2px;
-             font-family: 'JetBrains Mono', monospace;
-             margin-bottom: 15px;
-         }
-         .pass-input:focus { border-color: var(--accent); background: rgba(0,0,0,0.4); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
-         
-         .login-btn {
-             background: var(--accent);
-             color: white;
-             border: none;
-             padding: 14px;
-             width: 100%;
-             border-radius: 10px;
-             font-weight: 600;
-             cursor: pointer;
-             transition: all 0.2s;
-             font-size: 0.95rem;
-             margin-top: 10px;
-         }
-         .login-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
-         .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 15px; min-height: 1.2em; opacity: 0; transition: opacity 0.2s; font-weight: 500; }
+          .pass-input {
+              width: 100%;
+              padding: 14px 16px;
+              background: rgba(0, 0, 0, 0.2);
+              border: 1px solid var(--card-border);
+              border-radius: 10px;
+              color: white;
+              font-size: 1.1rem;
+              outline: none;
+              transition: all 0.2s;
+              text-align: center;
+              letter-spacing: 2px;
+              font-family: 'JetBrains Mono', monospace;
+              margin-bottom: 15px;
+          }
+          .pass-input:focus { border-color: var(--accent); background: rgba(0,0,0,0.4); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+          
+          .login-btn {
+              background: var(--accent);
+              color: white;
+              border: none;
+              padding: 14px;
+              width: 100%;
+              border-radius: 10px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.2s;
+              font-size: 0.95rem;
+              margin-top: 10px;
+          }
+          .login-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+          .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 15px; min-height: 1.2em; opacity: 0; transition: opacity 0.2s; font-weight: 500; }
 
-         /* === 3. 主界面布局 === */
-         #mainApp {
-             display: none !important;
-             width: 100%;
-             flex-direction: column;
-             align-items: center;
-             padding-bottom: 60px;
-         }
+          /* === 3. 主界面布局 === */
+          #mainApp {
+              display: none !important;
+              width: 100%;
+              flex-direction: column;
+              align-items: center;
+              padding-bottom: 60px;
+          }
 
-         .header-container { 
-             width: 100%; 
-             max-width: 1100px; 
-             padding: 60px 20px 30px; 
-             display: flex; 
-             justify-content: space-between; 
-             align-items: flex-end; 
-             flex-wrap: wrap; 
-             gap: 20px; 
-         }
+          .header-container { 
+              width: 100%; 
+              max-width: 1100px; 
+              padding: 60px 20px 30px; 
+              display: flex; 
+              justify-content: space-between; 
+              align-items: flex-end; 
+              flex-wrap: wrap; 
+              gap: 20px; 
+          }
 
-         .header-left { display: flex; flex-direction: column; gap: 15px; }
+          .header-left { display: flex; flex-direction: column; gap: 15px; }
 
-         .header-left h1 { 
-             font-size: 2rem; 
-             font-weight: 800; 
-             background: linear-gradient(to right, #fff, #cbd5e1); 
-             -webkit-background-clip: text; 
-             color: transparent; 
-             letter-spacing: -0.03em;
-             margin: 0;
-         }
+          .header-left h1 { 
+              font-size: 2rem; 
+              font-weight: 800; 
+              background: linear-gradient(to right, #fff, #cbd5e1); 
+              -webkit-background-clip: text; 
+              color: transparent; 
+              letter-spacing: -0.03em;
+              margin: 0;
+          }
 
-         /* === 4. 新版欢迎卡片 (Commander Style) === */
-         .welcome-banner {
-             display: none;
-             align-items: center;
-             background: rgba(255, 255, 255, 0.03);
-             border: 1px solid rgba(255, 255, 255, 0.08);
-             border-radius: 16px;
-             padding: 12px 20px;
-             backdrop-filter: blur(10px);
-             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-             animation: slideDown 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-             max-width: 100%;
-             cursor: pointer;
-             transition: transform 0.2s;
-         }
-         .welcome-banner:hover { transform: scale(1.02); background: rgba(255, 255, 255, 0.06); }
+          /* === 4. 新版欢迎卡片 (Commander Style) === */
+          .welcome-banner {
+              display: none;
+              align-items: center;
+              background: rgba(255, 255, 255, 0.03);
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 16px;
+              padding: 12px 20px;
+              backdrop-filter: blur(10px);
+              box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+              animation: slideDown 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+              max-width: 100%;
+              cursor: pointer;
+              transition: transform 0.2s;
+          }
+          .welcome-banner:hover { transform: scale(1.02); background: rgba(255, 255, 255, 0.06); }
 
-         .avatar-circle {
-             width: 44px;
-             height: 44px;
-             border-radius: 50%;
-             background: linear-gradient(135deg, var(--accent), #a855f7);
-             color: white;
-             display: flex;
-             align-items: center;
-             justify-content: center;
-             font-weight: 700;
-             font-size: 1.2rem;
-             margin-right: 15px;
-             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-             border: 2px solid rgba(255,255,255,0.1);
-             text-transform: uppercase;
-             background-size: cover;
-             background-position: center;
-         }
+          .avatar-circle {
+              width: 44px;
+              height: 44px;
+              border-radius: 50%;
+              background: linear-gradient(135deg, var(--accent), #a855f7);
+              color: white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 700;
+              font-size: 1.2rem;
+              margin-right: 15px;
+              box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+              border: 2px solid rgba(255,255,255,0.1);
+              text-transform: uppercase;
+              background-size: cover;
+              background-position: center;
+          }
 
-         .welcome-info {
-             flex-grow: 1;
-             display: flex;
-             flex-direction: column;
-             margin-right: 20px;
-         }
+          .welcome-info {
+              flex-grow: 1;
+              display: flex;
+              flex-direction: column;
+              margin-right: 20px;
+          }
 
-         .greeting-time {
-             font-size: 0.7rem;
-             color: var(--text-secondary);
-             text-transform: uppercase;
-             letter-spacing: 1px;
-             font-weight: 600;
-         }
+          .greeting-time {
+              font-size: 0.7rem;
+              color: var(--text-secondary);
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              font-weight: 600;
+          }
 
-         .user-name-display {
-             font-size: 1.05rem;
-             font-weight: 700;
-             color: white;
-             background: linear-gradient(to right, #fff, #e2e8f0);
-             -webkit-background-clip: text;
-             color: transparent;
-         }
+          .user-name-display {
+              font-size: 1.05rem;
+              font-weight: 700;
+              color: white;
+              background: linear-gradient(to right, #fff, #e2e8f0);
+              -webkit-background-clip: text;
+              color: transparent;
+          }
 
-         .access-badge {
-             font-family: 'JetBrains Mono', monospace;
-             font-size: 0.65rem;
-             color: var(--success);
-             background: rgba(16, 185, 129, 0.1);
-             padding: 4px 10px;
-             border-radius: 6px;
-             border: 1px solid rgba(16, 185, 129, 0.2);
-             display: flex;
-             align-items: center;
-             white-space: nowrap;
-             letter-spacing: 0.5px;
-         }
+          .access-badge {
+              font-family: 'JetBrains Mono', monospace;
+              font-size: 0.65rem;
+              color: var(--success);
+              background: rgba(16, 185, 129, 0.1);
+              padding: 4px 10px;
+              border-radius: 6px;
+              border: 1px solid rgba(16, 185, 129, 0.2);
+              display: flex;
+              align-items: center;
+              white-space: nowrap;
+              letter-spacing: 0.5px;
+          }
 
-         /* === 5. 个人中心弹窗特有样式 === */
-         #profileOverlay { display: none; }
-         .profile-avatar-upload {
-             width: 100px; height: 100px; border-radius: 50%;
-             margin: 0 auto 20px;
-             background: #1e293b; border: 2px dashed var(--text-secondary);
-             display: flex; align-items: center; justify-content: center;
-             cursor: pointer; overflow: hidden; position: relative;
-             background-size: cover; background-position: center;
-         }
-         .profile-avatar-upload span { font-size: 0.7rem; color: var(--text-secondary); text-align: center; }
-         textarea.pass-input { text-align: left; height: 80px; resize: none; font-family: 'Inter', sans-serif; font-size: 0.9rem; }
+          /* === 5. 个人中心弹窗特有样式 === */
+          #profileOverlay { display: none; }
+          .profile-avatar-upload {
+              width: 100px; height: 100px; border-radius: 50%;
+              margin: 0 auto 20px;
+              background: #1e293b; border: 2px dashed var(--text-secondary);
+              display: flex; align-items: center; justify-content: center;
+              cursor: pointer; overflow: hidden; position: relative;
+              background-size: cover; background-position: center;
+          }
+          .profile-avatar-upload span { font-size: 0.7rem; color: var(--text-secondary); text-align: center; }
+          textarea.pass-input { text-align: left; height: 80px; resize: none; font-family: 'Inter', sans-serif; font-size: 0.9rem; }
 
-         /* === 6. 统计栏与网格 === */
-         .stats-bar {
-             display: flex; 
-             gap: 15px; 
-             font-size: 0.75rem; 
-             color: var(--text-secondary); 
-             font-family: 'JetBrains Mono', monospace;
-             align-items: center;
-             margin-top: 5px;
-         }
-         .stat-item { 
-             display: flex; 
-             align-items: center; 
-             background: rgba(255,255,255,0.05); 
-             padding: 4px 10px; 
-             border-radius: 6px; 
-             border: 1px solid rgba(255,255,255,0.05); 
-         }
-         .stat-icon { margin-right: 6px; width: 14px; height: 14px; }
-         .live-dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; margin-right: 6px; box-shadow: 0 0 8px var(--success); animation: pulse 2s infinite; }
+          /* === 6. 统计栏与网格 === */
+          .stats-bar {
+              display: flex; 
+              gap: 15px; 
+              font-size: 0.75rem; 
+              color: var(--text-secondary); 
+              font-family: 'JetBrains Mono', monospace;
+              align-items: center;
+              margin-top: 5px;
+          }
+          .stat-item { 
+              display: flex; 
+              align-items: center; 
+              background: rgba(255,255,255,0.05); 
+              padding: 4px 10px; 
+              border-radius: 6px; 
+              border: 1px solid rgba(255,255,255,0.05); 
+          }
+          .stat-icon { margin-right: 6px; width: 14px; height: 14px; }
+          .live-dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; margin-right: 6px; box-shadow: 0 0 8px var(--success); animation: pulse 2s infinite; }
 
-         .search-box { position: relative; width: 100%; max-width: 320px; }
-         .search-box input { 
-             width: 100%; 
-             background: rgba(255, 255, 255, 0.04); 
-             border: 1px solid var(--card-border); 
-             padding: 12px 16px 12px 44px; 
-             border-radius: 12px; 
-             color: white; 
-             font-size: 0.95rem; 
-             transition: all 0.2s; 
-         }
-         .search-box input:focus { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.25); outline: none; }
-         .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); width: 18px; height: 18px; pointer-events: none;}
+          .search-box { position: relative; width: 100%; max-width: 320px; }
+          .search-box input { 
+              width: 100%; 
+              background: rgba(255, 255, 255, 0.04); 
+              border: 1px solid var(--card-border); 
+              padding: 12px 16px 12px 44px; 
+              border-radius: 12px; 
+              color: white; 
+              font-size: 0.95rem; 
+              transition: all 0.2s; 
+          }
+          .search-box input:focus { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.25); outline: none; }
+          .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); width: 18px; height: 18px; pointer-events: none;}
 
-         .filter-container { width: 100%; max-width: 1100px; padding: 0 20px 30px; }
-         .category-tabs { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
+          .filter-container { width: 100%; max-width: 1100px; padding: 0 20px 30px; }
+          .category-tabs { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
 
-         .tab-btn { 
-             background: rgba(255, 255, 255, 0.05); 
-             border: 1px solid transparent;
-             color: var(--text-secondary); 
-             cursor: pointer; 
-             font-size: 0.9rem; 
-             font-weight: 500; 
-             padding: 8px 16px; 
-             border-radius: 99px; 
-             transition: all 0.2s;
-         }
-         .tab-btn:hover { background: rgba(255, 255, 255, 0.1); color: white; }
-         .tab-btn.active { 
-             background: var(--accent); 
-             color: white; 
-             border-color: rgba(255,255,255,0.1);
-             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-         }
+          .tab-btn { 
+              background: rgba(255, 255, 255, 0.05); 
+              border: 1px solid transparent;
+              color: var(--text-secondary); 
+              cursor: pointer; 
+              font-size: 0.9rem; 
+              font-weight: 500; 
+              padding: 8px 16px; 
+              border-radius: 99px; 
+              transition: all 0.2s;
+          }
+          .tab-btn:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+          .tab-btn.active { 
+              background: var(--accent); 
+              color: white; 
+              border-color: rgba(255,255,255,0.1);
+              box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+          }
 
-         .grid { 
-             display: grid; 
-             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
-             gap: 20px; 
-             width: 100%; 
-             max-width: 1100px; 
-             padding: 0 20px; 
-         }
-         
-         .card { 
-             background: var(--card-bg); 
-             border: 1px solid var(--card-border); 
-             border-radius: 16px; 
-             padding: 24px; 
-             position: relative; 
-             text-decoration: none; 
-             overflow: hidden; 
-             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-             display: flex; 
-             flex-direction: column; 
-             cursor: pointer; 
-         }
-         .card:hover { 
-             transform: translateY(-4px); 
-             box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
-             border-color: rgba(255,255,255,0.2);
-         }
-         
-         .card::before { 
-             content: ''; 
-             position: absolute; 
-             top: 0; left: 0; right: 0; bottom: 0; 
-             background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.06), transparent 40%); 
-             opacity: 0; 
-             transition: opacity 0.5s; 
-             pointer-events: none; 
-             z-index: 1; 
-         }
-         .card:hover::before { opacity: 1; }
-         
-         .card-content { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; }
-         .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-         .icon-box { 
-             width: 44px; height: 44px; 
-             background: rgba(255, 255, 255, 0.03); 
-             border-radius: 10px; 
-             display: flex; align-items: center; justify-content: center; 
-             color: var(--text-primary); 
-             border: 1px solid rgba(255, 255, 255, 0.05); 
-             transition: transform 0.3s;
-         }
-         .card:hover .icon-box { transform: scale(1.1) rotate(3deg); background: rgba(255, 255, 255, 0.08); }
-         .icon-box svg { width: 22px; height: 22px; stroke-width: 1.8; }
-         
-         .card-port { 
-             font-family: 'JetBrains Mono', monospace; 
-             font-size: 0.7rem; 
-             color: var(--text-secondary); 
-             background: rgba(0,0,0,0.3); 
-             padding: 3px 8px; 
-             border-radius: 6px; 
-             border: 1px solid rgba(255,255,255,0.05);
-         }
-         
-         .card-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.01em; }
-         .card-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; flex-grow: 1; margin-bottom: 10px; }
-         
-         .card-footer { 
-             margin-top: auto; 
-             display: flex; 
-             align-items: center; 
-             justify-content: space-between; 
-             font-size: 0.8rem; 
-             color: var(--accent); 
-             font-weight: 500;
-         }
+          .grid { 
+              display: grid; 
+              grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
+              gap: 20px; 
+              width: 100%; 
+              max-width: 1100px; 
+              padding: 0 20px; 
+          }
+          
+          .card { 
+              background: var(--card-bg); 
+              border: 1px solid var(--card-border); 
+              border-radius: 16px; 
+              padding: 24px; 
+              position: relative; 
+              text-decoration: none; 
+              overflow: hidden; 
+              transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+              display: flex; 
+              flex-direction: column; 
+              cursor: pointer; 
+          }
+          .card:hover { 
+              transform: translateY(-4px); 
+              box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+              border-color: rgba(255,255,255,0.2);
+          }
+          
+          .card::before { 
+              content: ''; 
+              position: absolute; 
+              top: 0; left: 0; right: 0; bottom: 0; 
+              background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.06), transparent 40%); 
+              opacity: 0; 
+              transition: opacity 0.5s; 
+              pointer-events: none; 
+              z-index: 1; 
+          }
+          .card:hover::before { opacity: 1; }
+          
+          .card-content { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; }
+          .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+          .icon-box { 
+              width: 44px; height: 44px; 
+              background: rgba(255, 255, 255, 0.03); 
+              border-radius: 10px; 
+              display: flex; align-items: center; justify-content: center; 
+              color: var(--text-primary); 
+              border: 1px solid rgba(255, 255, 255, 0.05); 
+              transition: transform 0.3s;
+          }
+          .card:hover .icon-box { transform: scale(1.1) rotate(3deg); background: rgba(255, 255, 255, 0.08); }
+          .icon-box svg { width: 22px; height: 22px; stroke-width: 1.8; }
+          
+          .card-port { 
+              font-family: 'JetBrains Mono', monospace; 
+              font-size: 0.7rem; 
+              color: var(--text-secondary); 
+              background: rgba(0,0,0,0.3); 
+              padding: 3px 8px; 
+              border-radius: 6px; 
+              border: 1px solid rgba(255,255,255,0.05);
+          }
+          
+          .card-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.01em; }
+          .card-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; flex-grow: 1; margin-bottom: 10px; }
+          
+          .card-footer { 
+              margin-top: auto; 
+              display: flex; 
+              align-items: center; 
+              justify-content: space-between; 
+              font-size: 0.8rem; 
+              color: var(--accent); 
+              font-weight: 500;
+          }
 
-         .click-count {
-             display: flex; align-items: center; font-size: 0.75rem; color: var(--text-secondary); opacity: 0.6;
-             font-family: 'JetBrains Mono', monospace;
-         }
-         .click-count svg { width: 12px; height: 12px; margin-right: 4px; }
+          .click-count {
+              display: flex; align-items: center; font-size: 0.75rem; color: var(--text-secondary); opacity: 0.6;
+              font-family: 'JetBrains Mono', monospace;
+          }
+          .click-count svg { width: 12px; height: 12px; margin-right: 4px; }
 
-         .launch-text { opacity: 0; transform: translateX(-10px); transition: all 0.3s; }
-         .card:hover .launch-text { opacity: 1; transform: translateX(0); }
+          .launch-text { opacity: 0; transform: translateX(-10px); transition: all 0.3s; }
+          .card:hover .launch-text { opacity: 1; transform: translateX(0); }
 
-         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-         @media (max-width: 640px) { 
-             .header-container { flex-direction: column; align-items: flex-start; gap: 20px; padding-top: 40px; } 
-             .search-box { width: 100%; max-width: 100%; }
-             .filter-container { padding-bottom: 20px; }
-             .category-tabs { gap: 8px; }
-             .tab-btn { padding: 6px 14px; font-size: 0.85rem; }
-         }
-     </style>
+          @media (max-width: 640px) { 
+              .header-container { flex-direction: column; align-items: flex-start; gap: 20px; padding-top: 40px; } 
+              .search-box { width: 100%; max-width: 100%; }
+              .filter-container { padding-bottom: 20px; }
+              .category-tabs { gap: 8px; }
+              .tab-btn { padding: 6px 14px; font-size: 0.85rem; }
+          }
+      </style>
 </head>
 <body>
 
-     <div id="loginOverlay" class="overlay" style="display: flex;">
-         <div class="login-box">
-             <div class="login-title">🔒 218 实验室门禁</div>
-             <p class="login-sub">Personal Workspace Access</p>
-             <input type="text" id="usernameInput" class="pass-input" placeholder="USERNAME" autocomplete="off" style="margin-bottom: 10px;">
-             <input type="password" id="passwordInput" class="pass-input" placeholder="PASSWORD" autocomplete="off">
-             <button class="login-btn" onclick="checkPassword()">LOGIN</button>
-             <div id="errorMsg" class="error-msg"></div>
-         </div>
-     </div>
+      <div id="loginOverlay" class="overlay" style="display: flex;">
+          <div class="login-box">
+              <div class="login-title">🔒 218 实验室门禁</div>
+              <p class="login-sub">Personal Workspace Access</p>
+              <input type="text" id="usernameInput" class="pass-input" placeholder="USERNAME" autocomplete="off" style="margin-bottom: 10px;">
+              <input type="password" id="passwordInput" class="pass-input" placeholder="PASSWORD" autocomplete="off">
+              <button class="login-btn" onclick="checkPassword()">LOGIN</button>
+              <div id="errorMsg" class="error-msg"></div>
+          </div>
+      </div>
 
-     <div id="profileOverlay" class="overlay">
-         <div class="login-box" style="max-width: 400px;">
-             <div class="login-title">Researcher Profile</div>
-             <div class="profile-avatar-upload" id="profileAvatarPreview" onclick="document.getElementById('avatarUpload').click()">
-                 <span id="avatarPlaceholder">Click to<br>Upload</span>
-             </div>
-             <input type="file" id="avatarUpload" accept="image/*" style="display:none" onchange="handleAvatarSelect(this)">
-             <textarea id="bioInput" class="pass-input" placeholder="Write your bio here..."></textarea>
-             <div style="display:flex; gap:10px">
-                 <button class="login-btn" style="background: rgba(239, 68, 68, 0.2); color: var(--danger);" onclick="handleLogout()">LOGOUT</button>
-                 <button class="login-btn" onclick="saveProfile()">SAVE</button>
-             </div>
-             <p style="margin-top:15px; font-size:0.8rem; cursor:pointer; color:var(--text-secondary)" onclick="closeProfile()">Close</p>
-         </div>
-     </div>
+      <div id="profileOverlay" class="overlay">
+          <div class="login-box" style="max-width: 400px;">
+              <div class="login-title">Researcher Profile</div>
+              <div class="profile-avatar-upload" id="profileAvatarPreview" onclick="document.getElementById('avatarUpload').click()">
+                  <span id="avatarPlaceholder">Click to<br>Upload</span>
+              </div>
+              <input type="file" id="avatarUpload" accept="image/*" style="display:none" onchange="handleAvatarSelect(this)">
+              <textarea id="bioInput" class="pass-input" placeholder="Write your bio here..."></textarea>
+              <div style="display:flex; gap:10px">
+                  <button class="login-btn" style="background: rgba(239, 68, 68, 0.2); color: var(--danger);" onclick="handleLogout()">LOGOUT</button>
+                  <button class="login-btn" onclick="saveProfile()">SAVE</button>
+              </div>
+              <p style="margin-top:15px; font-size:0.8rem; cursor:pointer; color:var(--text-secondary)" onclick="closeProfile()">Close</p>
+          </div>
+      </div>
 
-     <div id="mainApp">
-         <div class="header-container">
-             <div class="header-left">
-                 <h1>218科研工具箱</h1>
-                 
-                 <div id="welcomeSection" class="welcome-banner" onclick="openProfile()">
-                     <div class="avatar-circle" id="userAvatar">U</div>
-                     <div class="welcome-info">
-                         <div class="greeting-time" id="greetingTime">Welcome back</div>
-                         <div class="user-name-display" id="currentUserDisplay">Researcher</div>
-                     </div>
-                     <div class="access-badge">
-                         <span class="live-dot" style="margin-right:6px"></span> 
-                         LVL.5 ACCESS
-                     </div>
-                 </div>
+      <div id="mainApp">
+          <div class="header-container">
+              <div class="header-left">
+                  <h1>218科研工具箱</h1>
+                  
+                  <div id="welcomeSection" class="welcome-banner" onclick="openProfile()">
+                      <div class="avatar-circle" id="userAvatar">U</div>
+                      <div class="welcome-info">
+                          <div class="greeting-time" id="greetingTime">Welcome back</div>
+                          <div class="user-name-display" id="currentUserDisplay">Researcher</div>
+                      </div>
+                      <div class="access-badge">
+                          <span class="live-dot" style="margin-right:6px"></span> 
+                          LVL.5 ACCESS
+                      </div>
+                  </div>
 
-                 <div class="stats-bar">
-                     <div class="stat-item" title="Current Users">
-                         <span class="live-dot"></span> <span id="activeUserCount">-</span> Online
-                     </div>
-                     <div class="stat-item" title="Total Visits">
-                         <svg class="stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                         <span id="totalVisitCount">...</span> Visits
-                     </div>
-                 </div>
-             </div>
-             
-             <div class="search-box">
-                 <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                 <input type="text" id="search" placeholder="Search tools, ports...">
-             </div>
-         </div>
+                  <div class="stats-bar">
+                      <div class="stat-item" title="Current Users">
+                          <span class="live-dot"></span> <span id="activeUserCount">-</span> Online
+                      </div>
+                      <div class="stat-item" title="Total Visits">
+                          <svg class="stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                          <span id="totalVisitCount">...</span> Visits
+                      </div>
+                  </div>
+              </div>
+              
+              <div class="search-box">
+                  <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                  <input type="text" id="search" placeholder="Search tools, ports...">
+              </div>
+          </div>
 
-         <div class="filter-container">
-              <div class="category-tabs" id="tabContainer"></div>
-         </div>
+          <div class="filter-container">
+               <div class="category-tabs" id="tabContainer"></div>
+          </div>
 
-         <main class="grid" id="cardContainer"></main>
-     </div>
+          <main class="grid" id="cardContainer"></main>
+      </div>
 
-     <script>
-         // 关键修复：将所有函数挂载到 window 对象上，以便 HTML onclick 可以访问
-         document.addEventListener('DOMContentLoaded', () => {
-             const serverIP = window.location.hostname;
-             const toolsConfig = [
-                 { id: "jupyter_lab", name: "Jupyter Lab", desc: "类似autoDL的东西", port: "8888", icon: "cpu", category: "Research", path: "/lab" },
-                 { id: "paper_ai", name: "创新点辅助智能体", desc: "和你互动想出合理的三个创新点", port: "8218", icon: "robot", category: "AI Service" },
-                 { id: "vscode", name: "VS Code在线环境", desc: "在线编程服务器上的内容", port: "8080", icon: "code", category: "DevTools" },
-                 { id: "re_ai", name: "AI审稿智能体", desc: "帮你快速给出审稿意见，投稿前可以过一过", port: "8001", icon: "box", category: "System" },
-                 { id: "notebook", name: "笔记", desc: "AI笔记本", port: "8002", icon: "chart", category: "Research" },
-                 { id: "zhanwei2", name: "占位", desc: "CM", port: "0000", icon: "folder", category: "Tools" },
-                 { id: "zhanwei3", name: "占位", desc: "Upcoming Feature: Graph Database", port: "0000", icon: "chart", category: "Research" }
-             ];
+      <script>
+          document.addEventListener('DOMContentLoaded', () => {
+              const serverIP = window.location.hostname;
+              
+              // ================= 配置区域：端口映射表 =================
+              // 在这里定义：用户名 -> Docker 端口
+              const userPortMap = {
+                  "hejinlin": "8002",
+                  "zhaoyixin": "8003",
+                  "admin": "8002"
+              };
 
-             let toolClickCounts = {};
-             let currentAvatarBase64 = null;
+              const toolsConfig = [
+                  { id: "jupyter_lab", name: "Jupyter Lab", desc: "类似autoDL的东西", port: "8888", icon: "cpu", category: "Research", path: "/lab" },
+                  { id: "paper_ai", name: "创新点辅助智能体", desc: "和你互动想出合理的三个创新点", port: "8218", icon: "robot", category: "AI Service" },
+                  { id: "vscode", name: "VS Code在线环境", desc: "在线编程服务器上的内容", port: "8080", icon: "code", category: "DevTools" },
+                  { id: "re_ai", name: "AI审稿智能体", desc: "帮你快速给出审稿意见，投稿前可以过一过", port: "8001", icon: "box", category: "System" },
+                  
+                  // 注意：port 设置为 "DYNAMIC"，渲染时会自动替换
+                  { id: "notebook", name: "专属笔记本", desc: "AI 辅助个人知识库 (SilverBullet)", port: "DYNAMIC", icon: "chart", category: "Research" },
+                  
+                  { id: "zhanwei2", name: "占位", desc: "CM", port: "0000", icon: "folder", category: "Tools" },
+                  { id: "zhanwei3", name: "占位", desc: "Upcoming Feature: Graph Database", port: "0000", icon: "chart", category: "Research" }
+              ];
 
-             // ================= 个人中心逻辑 =================
-             window.openProfile = function() {
-                 const user = localStorage.getItem("218_lab_user");
-                 document.getElementById('profileOverlay').style.display = 'flex';
-                 fetch(`/api/profile?user=${user}`).then(r => r.json()).then(data => {
-                     document.getElementById('bioInput').value = data.bio || "";
-                     if(data.avatar) setPreviewAvatar(data.avatar);
-                 });
-             }
+              let toolClickCounts = {};
+              let currentAvatarBase64 = null;
 
-             window.closeProfile = function() { document.getElementById('profileOverlay').style.display = 'none'; }
+              // ================= 个人中心逻辑 =================
+              window.openProfile = function() {
+                  const user = localStorage.getItem("218_lab_user");
+                  document.getElementById('profileOverlay').style.display = 'flex';
+                  fetch(`/api/profile?user=${user}`).then(r => r.json()).then(data => {
+                      document.getElementById('bioInput').value = data.bio || "";
+                      if(data.avatar) setPreviewAvatar(data.avatar);
+                  });
+              }
 
-             window.handleAvatarSelect = function(input) {
-                 const file = input.files[0];
-                 if(!file) return;
-                 const reader = new FileReader();
-                 reader.onload = (e) => {
-                     currentAvatarBase64 = e.target.result;
-                     setPreviewAvatar(currentAvatarBase64);
-                 };
-                 reader.readAsDataURL(file);
-             }
+              window.closeProfile = function() { document.getElementById('profileOverlay').style.display = 'none'; }
 
-             function setPreviewAvatar(base64) {
-                 const el = document.getElementById('profileAvatarPreview');
-                 el.style.backgroundImage = `url(${base64})`;
-                 document.getElementById('avatarPlaceholder').style.opacity = '0';
-             }
+              window.handleAvatarSelect = function(input) {
+                  const file = input.files[0];
+                  if(!file) return;
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                      currentAvatarBase64 = e.target.result;
+                      setPreviewAvatar(currentAvatarBase64);
+                  };
+                  reader.readAsDataURL(file);
+              }
 
-             window.saveProfile = async function() {
-                 const user = localStorage.getItem("218_lab_user");
-                 const bio = document.getElementById('bioInput').value;
-                 const btn = document.querySelector('#profileOverlay .login-btn:not([style*="danger"])');
-                 btn.innerText = "SAVING...";
-                 await fetch('/api/profile/update', {
-                     method: 'POST',
-                     body: JSON.stringify({ username: user, bio: bio, avatar: currentAvatarBase64 })
-                 });
-                 location.reload();
-             }
+              function setPreviewAvatar(base64) {
+                  const el = document.getElementById('profileAvatarPreview');
+                  el.style.backgroundImage = `url(${base64})`;
+                  document.getElementById('avatarPlaceholder').style.opacity = '0';
+              }
 
-             window.handleLogout = function() {
-                 localStorage.clear();
-                 location.reload();
-             }
+              window.saveProfile = async function() {
+                  const user = localStorage.getItem("218_lab_user");
+                  const bio = document.getElementById('bioInput').value;
+                  const btn = document.querySelector('#profileOverlay .login-btn:not([style*="danger"])');
+                  btn.innerText = "SAVING...";
+                  await fetch('/api/profile/update', {
+                      method: 'POST',
+                      body: JSON.stringify({ username: user, bio: bio, avatar: currentAvatarBase64 })
+                  });
+                  location.reload();
+              }
 
-             // ================= 登录与界面切换 =================
-             window.switchToMainUI = function(username, avatar) {
-                 document.getElementById('loginOverlay').style.setProperty('display', 'none', 'important');
-                 document.getElementById('mainApp').style.setProperty('display', 'flex', 'important');
-                 document.getElementById('mainApp').style.opacity = 1;
-                 
-                 const banner = document.getElementById('welcomeSection');
-                 const nameEl = document.getElementById('currentUserDisplay');
-                 const avatarEl = document.getElementById('userAvatar');
-                 const greetingEl = document.getElementById('greetingTime');
+              window.handleLogout = function() {
+                  localStorage.clear();
+                  location.reload();
+              }
 
-                 if (banner) {
-                     banner.style.display = 'flex';
-                     if (nameEl) nameEl.innerText = username;
-                     if (avatar) {
-                         avatarEl.style.backgroundImage = `url(${avatar})`;
-                         avatarEl.innerText = "";
-                     } else {
-                         avatarEl.innerText = username.charAt(0).toUpperCase();
-                     }
-                     const hour = new Date().getHours();
-                     let greeting = "Welcome back";
-                     if (hour >= 5 && hour < 12) greeting = "Good Morning";
-                     else if (hour >= 12 && hour < 18) greeting = "Good Afternoon";
-                     else greeting = "Good Evening";
-                     if (greetingEl) greetingEl.innerText = greeting;
-                 }
-                 initApp();
-             };
+              // ================= 登录与界面切换 =================
+              window.switchToMainUI = function(username, avatar) {
+                  document.getElementById('loginOverlay').style.setProperty('display', 'none', 'important');
+                  document.getElementById('mainApp').style.setProperty('display', 'flex', 'important');
+                  document.getElementById('mainApp').style.opacity = 1;
+                  
+                  const banner = document.getElementById('welcomeSection');
+                  const nameEl = document.getElementById('currentUserDisplay');
+                  const avatarEl = document.getElementById('userAvatar');
+                  const greetingEl = document.getElementById('greetingTime');
 
-             window.checkPassword = async function() {
-                 const userIn = document.getElementById('usernameInput').value.trim();
-                 const passIn = document.getElementById('passwordInput').value;
-                 const btn = document.querySelector('.login-btn');
-                 const errorMsg = document.getElementById('errorMsg');
+                  if (banner) {
+                      banner.style.display = 'flex';
+                      if (nameEl) nameEl.innerText = username;
+                      if (avatar) {
+                          avatarEl.style.backgroundImage = `url(${avatar})`;
+                          avatarEl.innerText = "";
+                      } else {
+                          avatarEl.innerText = username.charAt(0).toUpperCase();
+                      }
+                      const hour = new Date().getHours();
+                      let greeting = "Welcome back";
+                      if (hour >= 5 && hour < 12) greeting = "Good Morning";
+                      else if (hour >= 12 && hour < 18) greeting = "Good Afternoon";
+                      else greeting = "Good Evening";
+                      if (greetingEl) greetingEl.innerText = greeting;
+                  }
+                  
+                  // 登录成功后初始化应用，并重新渲染卡片（传入当前用户）
+                  initApp(username);
+              };
 
-                 if (!userIn || !passIn) {
-                     shakeInput();
-                     if(errorMsg) { errorMsg.style.opacity = '1'; errorMsg.innerText = "Enter credentials"; }
-                     return;
-                 }
-                 btn.innerText = "VERIFYING...";
-                 try {
-                     const res = await fetch('/api/login', {
-                         method: 'POST',
-                         body: JSON.stringify({ username: userIn, password: passIn })
-                     });
-                     if (res.ok) {
-                         const data = await res.json();
-                         localStorage.setItem("218_lab_auth", "true");
-                         localStorage.setItem("218_lab_user", data.user);
-                         window.switchToMainUI(data.user, data.avatar);
-                     } else { throw new Error(); }
-                 } catch (e) {
-                     btn.innerText = "LOGIN";
-                     if(errorMsg) { errorMsg.style.opacity = '1'; errorMsg.innerText = "Invalid Credentials"; }
-                     shakeInput();
-                 }
-             };
+              window.checkPassword = async function() {
+                  const userIn = document.getElementById('usernameInput').value.trim();
+                  const passIn = document.getElementById('passwordInput').value;
+                  const btn = document.querySelector('.login-btn');
+                  const errorMsg = document.getElementById('errorMsg');
 
-             (function checkAutoLogin() {
-                 const auth = localStorage.getItem("218_lab_auth");
-                 const user = localStorage.getItem("218_lab_user");
-                 if (auth === "true" && user) {
-                     fetch(`/api/profile?user=${user}`).then(r => r.json()).then(d => {
-                         window.switchToMainUI(user, d.avatar);
-                     });
-                 }
-             })();
+                  if (!userIn || !passIn) {
+                      shakeInput();
+                      if(errorMsg) { errorMsg.style.opacity = '1'; errorMsg.innerText = "Enter credentials"; }
+                      return;
+                  }
+                  btn.innerText = "VERIFYING...";
+                  try {
+                      const res = await fetch('/api/login', {
+                          method: 'POST',
+                          body: JSON.stringify({ username: userIn, password: passIn })
+                      });
+                      if (res.ok) {
+                          const data = await res.json();
+                          localStorage.setItem("218_lab_auth", "true");
+                          localStorage.setItem("218_lab_user", data.user);
+                          window.switchToMainUI(data.user, data.avatar);
+                      } else { throw new Error(); }
+                  } catch (e) {
+                      btn.innerText = "LOGIN";
+                      if(errorMsg) { errorMsg.style.opacity = '1'; errorMsg.innerText = "Invalid Credentials"; }
+                      shakeInput();
+                  }
+              };
 
-             // ================= 核心工具逻辑 =================
-             function shakeInput() {
-                 const box = document.querySelector('.login-box');
-                 if(box) box.animate([{transform:'translateX(0)'},{transform:'translateX(-10px)'},{transform:'translateX(10px)'},{transform:'translateX(0)'}],{duration:300});
-             }
+              (function checkAutoLogin() {
+                  const auth = localStorage.getItem("218_lab_auth");
+                  const user = localStorage.getItem("218_lab_user");
+                  if (auth === "true" && user) {
+                      fetch(`/api/profile?user=${user}`).then(r => r.json()).then(d => {
+                          window.switchToMainUI(user, d.avatar);
+                      });
+                  }
+              })();
 
-             async function fetchStats() {
-                 try {
-                     const res = await fetch('/api/stats');
-                     if (res.ok) {
-                         const data = await res.json();
-                         document.getElementById('totalVisitCount').innerText = data.total_visits;
-                         document.getElementById('activeUserCount').innerText = data.active_users;
-                         toolClickCounts = data.tool_clicks;
-                         updateClickCountsInDom();
-                     }
-                 } catch (e) {}
-             }
+              // ================= 核心工具逻辑 =================
+              function shakeInput() {
+                  const box = document.querySelector('.login-box');
+                  if(box) box.animate([{transform:'translateX(0)'},{transform:'translateX(-10px)'},{transform:'translateX(10px)'},{transform:'translateX(0)'}],{duration:300});
+              }
 
-             function updateClickCountsInDom() {
-                 toolsConfig.forEach(tool => {
-                     const el = document.getElementById(`count-${tool.id}`);
-                     if (el) el.innerText = toolClickCounts[tool.id] || 0;
-                 });
-             }
+              async function fetchStats() {
+                  try {
+                      const res = await fetch('/api/stats');
+                      if (res.ok) {
+                          const data = await res.json();
+                          document.getElementById('totalVisitCount').innerText = data.total_visits;
+                          document.getElementById('activeUserCount').innerText = data.active_users;
+                          toolClickCounts = data.tool_clicks;
+                          updateClickCountsInDom();
+                      }
+                  } catch (e) {}
+              }
 
-             window.reportClick = async function(toolId) {
-                 try { await fetch(`/api/click?id=${toolId}`); fetchStats(); } catch(e){}
-             };
+              function updateClickCountsInDom() {
+                  toolsConfig.forEach(tool => {
+                      const el = document.getElementById(`count-${tool.id}`);
+                      if (el) el.innerText = toolClickCounts[tool.id] || 0;
+                  });
+              }
 
-             function initApp() {
-                 const tabContainer = document.getElementById('tabContainer');
-                 if(tabContainer && tabContainer.innerHTML === "") {
-                     const cats = ['All', ...new Set(toolsConfig.map(t => t.category))];
-                     tabContainer.innerHTML = cats.map(cat => `<button class="tab-btn ${cat === 'All' ? 'active' : ''}" onclick="setFilter('${cat}')">${cat}</button>`).join('');
-                 }
-                 renderCards();
-                 const searchEl = document.getElementById('search');
-                 if(searchEl && !searchEl.dataset.bound) {
-                     searchEl.addEventListener('input', e => renderCards('All', e.target.value));
-                     searchEl.dataset.bound = true;
-                 }
-                 fetchStats();
-                 if(!window.statsInterval) window.statsInterval = setInterval(fetchStats, 10000); 
-             }
+              window.reportClick = async function(toolId) {
+                  try { await fetch(`/api/click?id=${toolId}`); fetchStats(); } catch(e){}
+              };
 
-             function renderCards(filter = 'All', searchTerm = '') {
-                 const container = document.getElementById('cardContainer');
-                 if (!container) return;
-                 container.innerHTML = '';
+              function initApp(currentUser = "guest") {
+                  const tabContainer = document.getElementById('tabContainer');
+                  if(tabContainer && tabContainer.innerHTML === "") {
+                      const cats = ['All', ...new Set(toolsConfig.map(t => t.category))];
+                      tabContainer.innerHTML = cats.map(cat => `<button class="tab-btn ${cat === 'All' ? 'active' : ''}" onclick="setFilter('${cat}')">${cat}</button>`).join('');
+                  }
+                  
+                  // 传入当前用户名以计算动态端口
+                  renderCards('All', '', currentUser);
+                  
+                  const searchEl = document.getElementById('search');
+                  if(searchEl && !searchEl.dataset.bound) {
+                      searchEl.addEventListener('input', e => renderCards('All', e.target.value, currentUser));
+                      searchEl.dataset.bound = true;
+                  }
+                  fetchStats();
+                  if(!window.statsInterval) window.statsInterval = setInterval(fetchStats, 10000); 
+              }
 
-                 // 【核心改动】：获取当前登录用户，用于透传
-                 const currentUser = localStorage.getItem("218_lab_user") || "admin";
+              // 核心修改：接收 currentUser 参数
+              function renderCards(filter = 'All', searchTerm = '', currentUser = "guest") {
+                  const container = document.getElementById('cardContainer');
+                  if (!container) return;
+                  container.innerHTML = '';
 
-                 const filtered = toolsConfig.filter(tool => {
-                     const matchCat = filter === 'All' || tool.category === filter;
-                     return matchCat && (tool.name + tool.desc + tool.port).toLowerCase().includes(searchTerm.toLowerCase());
-                 });
+                  // 如果未传入 currentUser，尝试从 localStorage 获取
+                  if (currentUser === "guest") {
+                      currentUser = localStorage.getItem("218_lab_user") || "guest";
+                  }
 
-                 filtered.forEach(tool => {
-                     const card = document.createElement('a');
-                     card.className = 'card';
-                     
-                     // 【核心改动】：在这里拼接 ?user=xxx。如果是 offline 则不拼接。
-                     const baseUrl = tool.port === "0000" ? "./coming_soon.html" : `http://${serverIP}:${tool.port}${tool.path || ''}`;
-                     const separator = baseUrl.includes('?') ? '&' : '?';
-                     card.href = tool.port === "0000" ? baseUrl : `${baseUrl}${separator}user=${currentUser}`;
-                     
-                     card.target = "_blank";
-                     card.onclick = () => window.reportClick(tool.id);
-                     card.onmousemove = e => {
-                         const rect = card.getBoundingClientRect();
-                         card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-                         card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
-                     };
+                  const filtered = toolsConfig.filter(tool => {
+                      const matchCat = filter === 'All' || tool.category === filter;
+                      return matchCat && (tool.name + tool.desc + tool.port).toLowerCase().includes(searchTerm.toLowerCase());
+                  });
 
-                     const icons = {
-                         'cpu': '<path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />',
-                         'robot': '<path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />',
-                         'code': '<path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />',
-                         'box': '<path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />',
-                         'chart': '<path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />',
-                         'folder': '<path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />',
-                         'default': '<path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />'
-                     };
+                  filtered.forEach(tool => {
+                      // === 动态端口逻辑 ===
+                      let finalPort = tool.port;
+                      let portDisplay = tool.port; // 用于显示在卡片右上角的文本
 
-                     card.innerHTML = `
-                         <div class="card-content">
-                             <div class="card-header">
-                                 <div class="icon-box"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor">${icons[tool.icon] || icons['default']}</svg></div>
-                                 <span class="card-port" style="${tool.port === '0000' ? 'color:#fbbf24; border-color:rgba(251,191,36,0.2);' : ''}">${tool.port === "0000" ? "OFFLINE" : tool.port}</span>
-                             </div>
-                             <div class="card-title">${tool.name}</div>
-                             <div class="card-desc">${tool.desc}</div>
-                             <div class="card-footer">
-                                 <div class="click-count">
-                                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:12px;height:12px;margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                     <span id="count-${tool.id}">0</span>
-                                 </div>
-                                 <span class="launch-text">Launch Service &rarr;</span>
-                             </div>
-                         </div>`;
-                     container.appendChild(card);
-                 });
-                 updateClickCountsInDom();
-             }
+                      if (tool.id === "notebook") {
+                          // 查找当前用户的端口
+                          const userPort = userPortMap[currentUser];
+                          if (userPort) {
+                              finalPort = userPort;
+                              portDisplay = userPort;
+                          } else {
+                              finalPort = "0000"; // 未配置的用户显示离线
+                              portDisplay = "OFFLINE";
+                          }
+                      }
+                      
+                      if (finalPort === "0000" && tool.port !== "DYNAMIC") {
+                          portDisplay = "OFFLINE";
+                      }
+                      // ===================
 
-             window.setFilter = (cat) => {
-                 renderCards(cat, document.getElementById('search').value);
-                 document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.innerText.trim() === cat));
-             };
+                      const card = document.createElement('a');
+                      card.className = 'card';
+                      
+                      const baseUrl = finalPort === "0000" ? "./coming_soon.html" : `http://${serverIP}:${finalPort}${tool.path || ''}`;
+                      // 只有在非 0000 端口时才附加 user 参数（虽然对于 Notebook 来说已经物理隔离了，但为了兼容性保留）
+                      const separator = baseUrl.includes('?') ? '&' : '?';
+                      card.href = finalPort === "0000" ? baseUrl : `${baseUrl}${separator}user=${currentUser}`;
+                      
+                      card.target = "_blank";
+                      card.onclick = () => window.reportClick(tool.id);
+                      card.onmousemove = e => {
+                          const rect = card.getBoundingClientRect();
+                          card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                          card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+                      };
 
-             const handleEnter = (e) => { if (e.key === 'Enter') window.checkPassword(); };
-             document.getElementById('usernameInput').addEventListener('keypress', handleEnter);
-             document.getElementById('passwordInput').addEventListener('keypress', handleEnter);
-         });
-     </script>
+                      const icons = {
+                          'cpu': '<path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />',
+                          'robot': '<path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />',
+                          'code': '<path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />',
+                          'box': '<path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />',
+                          'chart': '<path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />',
+                          'folder': '<path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />',
+                          'default': '<path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />'
+                      };
+
+                      card.innerHTML = `
+                          <div class="card-content">
+                              <div class="card-header">
+                                  <div class="icon-box"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor">${icons[tool.icon] || icons['default']}</svg></div>
+                                  <span class="card-port" style="${portDisplay === 'OFFLINE' ? 'color:#fbbf24; border-color:rgba(251,191,36,0.2);' : ''}">${portDisplay}</span>
+                              </div>
+                              <div class="card-title">${tool.name}</div>
+                              <div class="card-desc">${tool.desc}</div>
+                              <div class="card-footer">
+                                  <div class="click-count">
+                                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:12px;height:12px;margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                      <span id="count-${tool.id}">0</span>
+                                  </div>
+                                  <span class="launch-text">Launch Service &rarr;</span>
+                              </div>
+                          </div>`;
+                      container.appendChild(card);
+                  });
+                  updateClickCountsInDom();
+              }
+
+              window.setFilter = (cat) => {
+                  renderCards(cat, document.getElementById('search').value);
+                  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.innerText.trim() === cat));
+              };
+
+              const handleEnter = (e) => { if (e.key === 'Enter') window.checkPassword(); };
+              document.getElementById('usernameInput').addEventListener('keypress', handleEnter);
+              document.getElementById('passwordInput').addEventListener('keypress', handleEnter);
+          });
+      </script>
 </body>
 </html>

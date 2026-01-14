@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # === 何锦琳的专属笔记本 (Port 8002) ===
+  notebook_hejinlin:
+    image: zefhemel/silverbullet
+    container_name: notebook_hejinlin
+    restart: unless-stopped
+    ports:
+      - "8002:3000"
+    volumes:
+      # 映射物理路径: res/hejinlin
+      - ./ai_paper_agent/res/hejinlin:/space
+    environment:
+      - TZ=Asia/Shanghai
+
+  # === 赵艺馨的专属笔记本 (Port 8003) ===
+  notebook_zhaoyixin:
+    image: zefhemel/silverbullet
+    container_name: notebook_zhaoyixin
+    restart: unless-stopped
+    ports:
+      - "8003:3000"
+    volumes:
+      # 映射物理路径: res/zhaoyixin
+      - ./ai_paper_agent/res/zhaoyixin:/space
+    environment:
+      - TZ=Asia/Shanghai
+
+  # === 预留：管理员或新用户 (Port 8004) ===
+  # notebook_admin:
+  #   image: zefhemel/silverbullet
+  #   container_name: notebook_admin
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8004:3000"
+  #   volumes:
+  #     - ./ai_paper_agent/res/admin:/space
