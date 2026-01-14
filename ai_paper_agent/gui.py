@@ -5,7 +5,7 @@ import shutil
 import uuid
 from pathlib import Path
 
-# 引入你的核心模块
+# 引入核心模块
 from src.agent import ResearchAgent
 from src.config import (
     DOCS_DIR, RES_DIR, 
@@ -18,36 +18,93 @@ from src.prompts import PromptManager
 from langchain_community.callbacks import StreamlitCallbackHandler
 
 # =============================================================================
-# 0. 会话与路径初始化 (Session & Path Init) - [核心修改]
+# 0. 页面基础配置 (完全保留原始样式)
 # =============================================================================
-# 必须在 set_page_config 之后，其他逻辑之前执行
+st.set_page_config(
+    page_title="218 Lab | AI Research Agent", 
+    page_icon="🎓", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-st.set_page_config(page_title="AI Research Agent", page_icon="🎓", layout="wide")
+# 注入原始项目的所有 CSS 样式细节
+st.markdown("""
+    <style>
+    /* 全局背景与字体 */
+    .main { background-color: #030712; color: #f8fafc; }
+    
+    /* 侧边栏美化 */
+    section[data-testid="stSidebar"] {
+        background-color: #111827;
+        border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    /* 按钮与输入框定制 */
+    .stButton>button {
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .stButton>button:hover {
+        border-color: #6366f1;
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+    }
+    
+    /* 聊天气泡样式 */
+    .stChatMessage {
+        background-color: rgba(30, 41, 59, 0.4) !important;
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 16px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* 步骤状态行美化 */
+    .status-row {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+    }
+    
+    /* 解决进度渲染时的 React 节点冲突：强制锁定 Column 间距 */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:has(div.stColumn) {
+        gap: 0px !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# 1. 生成唯一会话 ID
+# =============================================================================
+# 1. 身份识别与物理路径锁定 (实现实名制隔离)
+# =============================================================================
 if "user_session_id" not in st.session_state:
-    # 生成一个随机 UUID 作为当前用户的身份证
-    st.session_state.user_session_id = str(uuid.uuid4())
+    query_params = st.query_params
+    url_user = query_params.get("user")
+    
+    if url_user:
+        st.session_state.user_session_id = url_user
+    else:
+        # 如果不是从导航页跳转，默认使用 admin
+        st.sidebar.warning("⚠️ 未检测到登录凭证，当前以 admin 身份运行。")
+        st.session_state.user_session_id = "admin"
 
-# 2. 定义当前用户的专属资源目录
+# 锁定当前用户的物理目录：res/{username}
 USER_RES_DIR = RES_DIR / st.session_state.user_session_id
 
-# 3. 确保目录存在
+# 确保用户专属目录存在
 if not USER_RES_DIR.exists():
     USER_RES_DIR.mkdir(parents=True, exist_ok=True)
 
-# 调试信息 (可选，显示在 Sidebar)
-# st.sidebar.caption(f"Session: {st.session_state.user_session_id[:8]}")
-
 # =============================================================================
-# 1. 辅助工具函数 (Scope 限制在 USER_RES_DIR)
+# 2. 核心辅助工具函数 (完全保留原始健壮性)
 # =============================================================================
 def check_milestone(filename):
-    """检查当前用户目录下文件是否存在"""
+    """检查物理文件是否存在"""
     return (USER_RES_DIR / filename).exists()
 
 def read_file_content(filename):
-    """读取当前用户目录下的文件"""
+    """读取文件内容"""
     path = USER_RES_DIR / filename
     if path.exists():
         with open(path, 'r', encoding='utf-8') as f:
@@ -56,16 +113,17 @@ def read_file_content(filename):
 
 def clean_project_files(scope="partial"):
     """
-    文件清理函数 (仅清理当前用户的文件)
+    文件清理函数
     :param scope: "partial" (仅重置思路) / "full" (彻底重置)
     """
+    # 需要清理的文件清单
     files_to_remove = [
         FILE_MEMORY, FILE_INNOV_1, FILE_INNOV_2, FILE_INNOV_3, FILE_FINAL, "total.md"
     ]
     
     if scope == "full":
         files_to_remove.append(FILE_BASE_INFO)
-        # 清理图片目录
+        # 清理该用户专属的图片目录
         figures_dir = USER_RES_DIR / "figures"
         if figures_dir.exists():
             try:
@@ -81,9 +139,13 @@ def clean_project_files(scope="partial"):
             except Exception: pass
 
 def merge_final_report():
-    """将所有 Markdown 文件合并为 total.md (在用户目录下)"""
+    """将该研究员的所有成果合并为 total.md"""
     target_files = [FILE_INNOV_1, FILE_INNOV_2, FILE_INNOV_3, FILE_FINAL]
-    total_content = ["# Final Integrated Research Proposal\n", "> Auto-generated by AI Research Agent\n", "---\n"]
+    total_content = [
+        "# Final Integrated Research Proposal\n", 
+        f"> Generated by 218 Lab AI Agent for Researcher: {st.session_state.user_session_id}\n", 
+        "---\n"
+    ]
 
     for fname in target_files:
         content = read_file_content(fname)
@@ -95,17 +157,19 @@ def merge_final_report():
         f.write("".join(total_content))
 
 # =============================================================================
-# 2. 状态初始化
+# 3. 状态管理与自动推断 (尊重原始逻辑链)
 # =============================================================================
 
+# 初始化 Agent
 if "agent" not in st.session_state:
-    # [关键修改] 初始化 Agent 时传入 session_id
     st.session_state.agent = ResearchAgent(session_id=st.session_state.user_session_id)
 
+# 初始化消息历史
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- 智能状态推断逻辑 (基于用户目录判断) ---
+# --- 智能状态推断逻辑 ---
+# 每次页面刷新时，自动根据 res/{user} 目录下的文件现状判断当前处于哪个 Phase
 if "phase" not in st.session_state:
     file_phase = "init"
     if check_milestone("total.md"): file_phase = "done" 
@@ -117,6 +181,7 @@ if "phase" not in st.session_state:
     st.session_state.phase = file_phase
 
 # --- 状态自愈 (State Transition) ---
+# 当后端生成文件后，触发状态自动跳转
 state_changed = False
 if st.session_state.phase == "read" and check_milestone(FILE_BASE_INFO):
     st.session_state.phase = "innov1"
@@ -132,125 +197,137 @@ elif st.session_state.phase == "innov3" and check_milestone(FILE_INNOV_3):
     state_changed = True
 
 if state_changed:
+    time.sleep(0.1) # 缓冲，防止 React 渲染冲突
     st.rerun()
 
 # =============================================================================
-# 3. 模态弹窗
+# 4. 模态弹窗 (用于成果预览)
 # =============================================================================
-@st.dialog("📄 文件预览")
+@st.dialog("📄 成果文档预览")
 def show_file_content(filename, content):
-    # 显示相对路径，不显示长 UUID
-    st.caption(f"File: .../{filename}")
+    st.caption(f"Researcher: {st.session_state.user_session_id} | Path: res/{st.session_state.user_session_id}/{filename}")
     st.markdown(content)
 
 # =============================================================================
-# 4. 侧边栏
+# 5. 侧边栏：核心管理与进度 (彻底修复 removeChild 报错的关键区域)
 # =============================================================================
 with st.sidebar:
-    st.title("🎓 科研助手控制台")
-    st.caption(f"Session: {st.session_state.user_session_id[:6]}...")
+    st.title("🎓 218 助手控制台")
+    st.markdown(f"**当前研究员**: `{st.session_state.user_session_id}`")
     
-    # [逻辑优化]: 修复上传和选择逻辑
+    st.divider()
+    
+    # 方案 A：手动同步按钮 (带稳定 Key)
+    if st.button("🔄 同步个人知识库", key=f"sync_btn_{st.session_state.user_session_id}", use_container_width=True):
+        with st.spinner("正在扫描笔记并构建向量索引..."):
+            sync_result = st.session_state.agent.sync_knowledge_base()
+            st.toast(sync_result)
+            time.sleep(0.5)
+            st.rerun()
+
+    # 原始的论文管理逻辑
     with st.expander("📂 论文管理", expanded=(st.session_state.phase == "init")):
-        uploaded_file = st.file_uploader("上传新论文 (PDF)", type=["pdf"])
+        uploaded_file = st.file_uploader("上传新论文 (PDF)", type=["pdf"], key="main_pdf_uploader")
         if uploaded_file:
-            # 论文还是存在公共 DOCS_DIR，因为原始论文是可以共享的
-            # 如果希望论文也隔离，可以将 save_path 改为 USER_RES_DIR
             save_path = DOCS_DIR / uploaded_file.name
             with open(save_path, "wb") as f:
                 f.write(uploaded_file.getbuffer())
             
-            if "last_processed_file" not in st.session_state or st.session_state.last_processed_file != uploaded_file.name:
-                st.session_state.last_processed_file = uploaded_file.name
+            # 自动选中上传的文件
+            if "last_processed" not in st.session_state or st.session_state.last_processed != uploaded_file.name:
+                st.session_state.last_processed = uploaded_file.name
                 st.session_state.pdf_selector = uploaded_file.name
                 st.toast(f"已上传并选中: {uploaded_file.name}")
 
-    # 获取文件列表
+    # 获取 PDF 列表并同步 Selector
     pdf_files = list(DOCS_DIR.glob("*.pdf"))
     pdf_names = [f.name for f in pdf_files]
-
     if "pdf_selector" not in st.session_state:
         st.session_state.pdf_selector = pdf_names[0] if pdf_names else None
-    elif st.session_state.pdf_selector not in pdf_names:
-        st.session_state.pdf_selector = pdf_names[0] if pdf_names else None
-
+    
     selected_pdf = st.selectbox(
         "选择目标论文", pdf_names, 
-        key="pdf_selector",
+        key="pdf_selector_ui", 
         disabled=(st.session_state.phase != "init")
     )
     
     st.divider()
-    
-    st.subheader("当前进度")
-    def render_step_status(label, filename, associated_phases):
-        # 使用 unique key 防止组件复用导致的冲突
-        step_key = f"step_{filename}_{st.session_state.user_session_id}"
-        
-        col1, col2 = st.columns([0.8, 0.2])
-        is_completed = check_milestone(filename)
-        is_doing = (st.session_state.phase in associated_phases) and not is_completed
-        
-        # 渲染左侧状态文本
-        with col1:
-            if is_completed: 
-                st.markdown(f"✅ ~~{label}~~")
-            elif is_doing: 
-                st.markdown(f"**🔄 :blue[{label}]**")
-            else: 
-                st.markdown(f"⚪ <span style='color:grey'>{label}</span>", unsafe_allow_html=True)
-        
-        # [核心修复] 渲染右侧按钮：无论是否完成，都必须进入 col2 保持 DOM 结构稳定
-        with col2:
-            if is_completed:
-                # 给按钮增加 session_id 后缀，确保全局唯一
-                btn_key = f"btn_view_{filename}_{st.session_state.user_session_id}"
-                if st.button("📄", key=btn_key, help=f"预览 {filename}"):
-                    content = read_file_content(filename)
-                    if content: show_file_content(filename, content)
-            else:
-                # [关键] 即使没有按钮，也要放一个空元素占位
-                # 这防止了 "removeChild" 错误，因为节点本身依然存在
-                st.empty()
+    st.subheader("当前研究进度")
 
-    render_step_status("Base Info Extraction", FILE_BASE_INFO, ["read"])
-    render_step_status("Innovation 1", FILE_INNOV_1, ["innov1"])
-    render_step_status("Innovation 2", FILE_INNOV_2, ["innov2"])
-    render_step_status("Innovation 3", FILE_INNOV_3, ["innov3"])
-    render_step_status("Final Experiment", FILE_FINAL, ["final"])
+    # 【深度修复逻辑】：使用稳定容器锚点，彻底根除 removeChild 错误
+    def render_step_status(label, filename, associated_phases):
+        # 始终通过一个稳定的 container 锁定渲染位置
+        row_container = st.container()
+        with row_container:
+            # 无论文件是否存在，始终创建 [0.8, 0.2] 的列结构，防止 React 调整 DOM 树
+            col1, col2 = st.columns([0.8, 0.2])
+            
+            is_completed = check_milestone(filename)
+            is_doing = (st.session_state.phase in associated_phases) and not is_completed
+            
+            with col1:
+                # 使用 st.empty() 预留槽位，保证渲染时节点 ID 的一致性
+                text_slot = st.empty()
+                if is_completed:
+                    text_slot.markdown(f"✅ ~~{label}~~")
+                elif is_doing:
+                    text_slot.markdown(f"**🔄 :blue[{label}]**")
+                else:
+                    text_slot.markdown(f"⚪ <span style='color:grey'>{label}</span>", unsafe_allow_html=True)
+            
+            with col2:
+                # 即使没有按钮，也要渲染一个空的占位符，保持 DOM 节点数恒定
+                btn_slot = st.empty()
+                if is_completed:
+                    # 使用极其稳定的复合 Key：包含用户ID、文件名和稳定后缀
+                    stable_key = f"view_{st.session_state.user_session_id}_{filename}_stable_v3"
+                    if btn_slot.button("📄", key=stable_key, help=f"查看 {filename}"):
+                        content = read_file_content(filename)
+                        if content:
+                            show_file_content(filename, content)
+                else:
+                    btn_slot.write("")
+
+    # 依次渲染所有步骤
+    render_step_status("提取论文基础信息 (Base)", FILE_BASE_INFO, ["read"])
+    render_step_status("创新点探索 1 (Innov 1)", FILE_INNOV_1, ["innov1"])
+    render_step_status("创新点探索 2 (Innov 2)", FILE_INNOV_2, ["innov2"])
+    render_step_status("创新点探索 3 (Innov 3)", FILE_INNOV_3, ["innov3"])
+    render_step_status("设计对比实验 (Final)", FILE_FINAL, ["final"])
     
     if st.session_state.phase == "done":
-         st.markdown("✅ **Total Report Generated**")
+         st.markdown("🎉 **阶段性任务已全部完成**")
 
     st.divider()
     
+    # 原始重置选项逻辑
     if st.session_state.phase != "done":
         with st.expander("⚠️ 重置选项 (Reset)", expanded=False):
-            if st.button("🔙 重置创新点 (Keep Base)"):
+            if st.button("🔙 重置创新点 (保留 Base)", key="reset_partial_btn", use_container_width=True):
                 clean_project_files(scope="partial")
-                # 保留 session_id 和 agent，只清空消息和状态
-                current_id = st.session_state.user_session_id
+                # 清除状态并锁定用户 ID
+                cid = st.session_state.user_session_id
                 st.session_state.clear()
-                st.session_state.user_session_id = current_id
+                st.session_state.user_session_id = cid
                 st.rerun()
-            if st.button("🆕 彻底重置 (Change Paper)"):
+            if st.button("🆕 彻底重置 (新论文)", key="reset_full_btn", use_container_width=True):
                 clean_project_files(scope="full")
-                current_id = st.session_state.user_session_id
+                cid = st.session_state.user_session_id
                 st.session_state.clear()
-                st.session_state.user_session_id = current_id
+                st.session_state.user_session_id = cid
                 st.rerun()
 
 # =============================================================================
-# 5. 主界面逻辑
+# 6. 主界面逻辑 (尊重原始 Phase 渲染逻辑)
 # =============================================================================
 
-# --- Phase 4: Done (最终展示页) ---
+# --- Phase: Done (最终成果汇总展示) ---
 if st.session_state.phase == "done":
-    st.header("🏆 最终科研方案 (Final Proposal)")
+    st.header("🏆 最终科研提案 (Final Proposal)")
     
     if not check_milestone("total.md"):
         merge_final_report()
-        st.toast("已合并所有文档！")
+        st.toast("已自动生成汇总报告！")
     
     col1, col2, col3 = st.columns([0.4, 0.3, 0.3])
     
@@ -258,64 +335,64 @@ if st.session_state.phase == "done":
     with col1:
         if content:
             st.download_button(
-                "📥 下载完整报告 (MD)", content, "total_research.md",
-                type="primary", use_container_width=True
+                "📥 下载完整报告 (MD)", content, f"proposal_{st.session_state.user_session_id}.md",
+                type="primary", use_container_width=True, key="download_total_btn"
             )
             
     with col2:
-        if st.button("🔄 保留 Base 重列创新点", help="保留 base.md，删除 innov1/2/3 和 final，重新开始思考创新点。", use_container_width=True):
+        if st.button("🔄 重新审视创新点", help="保留基础分析，重新推导创新点。", use_container_width=True, key="done_re_innov"):
             clean_project_files(scope="partial")
-            current_id = st.session_state.user_session_id
+            cid = st.session_state.user_session_id
             st.session_state.clear()
-            st.session_state.user_session_id = current_id
+            st.session_state.user_session_id = cid
             st.rerun()
             
     with col3:
-        if st.button("🚀 开启新论文 (Full Reset)", help="删除所有文件，回到初始状态。", use_container_width=True):
+        if st.button("🚀 开始新课题", help="清空所有记录，开启新论文研究。", use_container_width=True, key="done_new_start"):
             clean_project_files(scope="full")
-            current_id = st.session_state.user_session_id
+            cid = st.session_state.user_session_id
             st.session_state.clear()
-            st.session_state.user_session_id = current_id
+            st.session_state.user_session_id = cid
             st.rerun()
             
     st.divider()
-    
     if content:
         st.markdown(content)
     else:
-        st.error("Error: total.md 生成失败。")
+        st.error("Error: 无法加载 total.md 报告内容。")
         
-    st.stop() 
+    st.stop() # 终止后续渲染
 
-# --- 以下是交互阶段 (Init -> Final) ---
+# --- 常规交互界面 ---
 
-st.header("AI Research Agent: Top-Tier Paper Innovation")
+st.header(f"AI Research Agent | 研究员: {st.session_state.user_session_id}")
 
-# 渲染历史消息
+# 渲染对话历史 (使用原始样式)
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- Phase 0: Init ---
+# --- Phase: Init (初始状态) ---
 if st.session_state.phase == "init":
     if not selected_pdf:
-        st.info("👈 请在左侧侧边栏上传 PDF 论文。")
+        st.info("👈 请在左侧侧边栏上传或选择 PDF 论文以开始。")
     else:
-        st.info(f"就绪。目标论文：**{selected_pdf}**")
-        if st.button("开始阅读论文", type="primary"):
+        st.success(f"目标论文已就绪：**{selected_pdf}**")
+        if st.button("🚀 开始阅读并提取信息", type="primary", key="start_work_btn", use_container_width=True):
             st.session_state.phase = "read"
-            # 初始化记忆文件到用户目录
+            # 初始化记忆文件
             if not (USER_RES_DIR / FILE_MEMORY).exists():
                 with open(USER_RES_DIR / FILE_MEMORY, 'w', encoding='utf-8') as f:
                     f.write(PromptManager.get_memory_init_content())
             st.rerun()
 
-# --- Phase 1: Read ---
+# --- Phase: Read (基础信息提取) ---
 elif st.session_state.phase == "read":
     if not check_milestone(FILE_BASE_INFO):
         st.session_state.agent.update_phase("read")
-        trigger_msg = f"请读取文件 '{selected_pdf}'，分析其核心方法和理论，并建立 '{FILE_BASE_INFO}'。"
+        trigger_msg = f"请读取文件 '{selected_pdf}'，深入分析其核心方法、数学理论和实验设置，并建立 '{FILE_BASE_INFO}'。"
         
+        # 自动触发第一轮对话逻辑
         if not st.session_state.messages or st.session_state.messages[-1]["content"] != trigger_msg:
             st.session_state.messages.append({"role": "user", "content": trigger_msg})
             st.rerun()
@@ -323,16 +400,17 @@ elif st.session_state.phase == "read":
         if st.session_state.messages[-1]["role"] == "user":
             with st.chat_message("assistant"):
                 st_callback = StreamlitCallbackHandler(st.container())
-                response_placeholder = st.empty()
+                # 使用空位槽稳定文本流
+                res_slot = st.empty()
                 full_response = ""
                 try:
                     stream = st.session_state.agent.chat_stream(trigger_msg, callbacks=[st_callback])
                     for chunk in stream:
                         full_response += chunk
-                        response_placeholder.markdown(full_response + "▌")
-                    response_placeholder.markdown(full_response)
+                        res_slot.markdown(full_response + "▌")
+                    res_slot.markdown(full_response)
                     st.session_state.messages.append({"role": "assistant", "content": full_response})
-                    
+                    # 完成后由顶部的自愈逻辑处理跳转
                     st.rerun()
                 except Exception as e:
                     st.error(f"Execution Error: {str(e)}")
@@ -340,11 +418,12 @@ elif st.session_state.phase == "read":
         st.session_state.phase = "innov1"
         st.rerun()
 
-# --- Phase 2: Innovations (1, 2, 3) ---
+# --- Phase: Innovations (创新点 1, 2, 3) ---
 elif st.session_state.phase in ["innov1", "innov2", "innov3"]:
     phase_map = {"innov1": (FILE_INNOV_1, 1), "innov2": (FILE_INNOV_2, 2), "innov3": (FILE_INNOV_3, 3)}
     current_file, stage_num = phase_map[st.session_state.phase]
 
+    # 初始化当前创新阶段的大脑上下文
     if f"ready_{st.session_state.phase}" not in st.session_state:
         context = {
             "base_summary": read_file_content(FILE_BASE_INFO),
@@ -353,47 +432,47 @@ elif st.session_state.phase in ["innov1", "innov2", "innov3"]:
         st.session_state.agent.update_phase(st.session_state.phase, context)
         st.session_state.agent.clear_short_term_memory()
         
-        welcome_msg = f"**[Phase 2-{stage_num}]** 已就绪。请提出关于 **创新点 {stage_num}** 的思路。"
-        st.session_state.messages.append({"role": "assistant", "content": welcome_msg})
+        welcome_text = f"**[阶段 2-{stage_num}]** 已就绪。我们现在开始推导 **创新点 {stage_num}**。您可以提供初步的想法，或者让我根据已有笔记进行发散。"
+        st.session_state.messages.append({"role": "assistant", "content": welcome_text})
         st.session_state[f"ready_{st.session_state.phase}"] = True
         st.rerun()
 
-    if prompt := st.chat_input(f"描述创新点 {stage_num} 思路..."):
+    if prompt := st.chat_input(f"描述关于创新点 {stage_num} 的科研灵感..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
             st_callback = StreamlitCallbackHandler(st.container())
-            response_placeholder = st.empty()
+            res_slot = st.empty()
             full_response = ""
             
             try:
                 stream_generator = st.session_state.agent.chat_stream(prompt, callbacks=[st_callback])
                 for chunk in stream_generator:
                     full_response += chunk
-                    response_placeholder.markdown(full_response + "▌")
-                response_placeholder.markdown(full_response)
+                    res_slot.markdown(full_response + "▌")
+                res_slot.markdown(full_response)
                 
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
 
+                # 定稿检查：如果 innov 文件已写入，由自愈逻辑跳转
                 if check_milestone(current_file):
-                    st.success(f"🎉 创新点 {stage_num} 已归档！")
+                    st.success(f"🎉 创新点 {stage_num} 已成功定稿归档。")
                     time.sleep(1)
                     st.rerun()
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"Error during stream: {e}")
 
-# --- Phase 3: Final Experiment ---
+# --- Phase: Final (实验方案设计) ---
 elif st.session_state.phase == "final":
-    
     if not check_milestone(FILE_FINAL):
         if "final_triggered" not in st.session_state:
             context = {"base_summary": read_file_content(FILE_BASE_INFO)}
             st.session_state.agent.update_phase("final", context)
             st.session_state.agent.clear_short_term_memory()
             
-            trigger = "三个创新点已就绪。请读取所有 innov 文件，设计最终的对比实验和消融实验方案，并写入 final_innov.md。"
+            trigger = "所有创新点已配齐。请综合所有 innov 文件，设计一套严谨的对比实验、消融实验以及必要的数学证明，并写入 final_innov.md。"
             st.session_state.messages.append({"role": "user", "content": trigger})
             st.session_state["final_triggered"] = True
             st.rerun() 
@@ -401,30 +480,28 @@ elif st.session_state.phase == "final":
         if st.session_state.messages[-1]["role"] == "user":
             with st.chat_message("assistant"):
                 st_callback = StreamlitCallbackHandler(st.container())
-                response_placeholder = st.empty()
+                res_slot = st.empty()
                 full_response = ""
                 
                 try:
-                    trigger = st.session_state.messages[-1]["content"]
-                    stream = st.session_state.agent.chat_stream(trigger, callbacks=[st_callback])
+                    trigger_text = st.session_state.messages[-1]["content"]
+                    stream = st.session_state.agent.chat_stream(trigger_text, callbacks=[st_callback])
                     for chunk in stream:
                         full_response += chunk
-                        response_placeholder.markdown(full_response + "▌")
-                    response_placeholder.markdown(full_response)
+                        res_slot.markdown(full_response + "▌")
+                    res_slot.markdown(full_response)
                     
                     st.session_state.messages.append({"role": "assistant", "content": full_response})
                     
                     if check_milestone(FILE_FINAL):
                         st.rerun() 
                 except Exception as e:
-                    st.error(f"Execution Error: {str(e)}")
+                    st.error(f"Critical Error: {str(e)}")
                     del st.session_state["final_triggered"]
 
     else:
-        st.success("✅ 最终实验方案 (final_innov.md) 已设计完成！")
-        st.info("Agent 已综合所有创新点并设计了实验。")
-        
-        if st.button("🏁 生成最终汇总报告 (Merge & Finish)", type="primary"):
+        st.success("✅ 实验设计 (final_innov.md) 已圆满完成。")
+        if st.button("🏁 合并所有阶段成果，生成最终报告", type="primary", key="final_merge_all_btn", use_container_width=True):
             merge_final_report() 
             st.session_state.phase = "done"
             st.rerun()
